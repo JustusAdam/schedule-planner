@@ -13,8 +13,24 @@
         <h1>@title</h1>
         <div class="top-block"></div>
         <div class="bottom-block">
-            <form action="">
-
+            <form id="new-lesson-type">
+                <label for="input-name"></label>
+            </form>
+            <div id="lessons">
+                <div class="lesson">
+                    <span class="timeslot"></span>
+                    <span class="lesson-type"></span>
+                </div>
+            </div>
+            <form id="new-lesson-form">
+                <fieldset>
+                    <label for="input-type">Name des Moduls</label><input id="input-name" name="name" type="text" />
+                    <label for="input-timeslot">Zeitslot</label><input id="input-timeslot" name="timeslot" type="number" />
+                    <label for="input-day">Tag</label><input id="input-day" name="day" type="number" />
+                </fieldset>
+            </form>
+            <form action="/handle" id="send-request">
+                <button type="submit" value="Submit">Submit</button>
             </form>
         </div>
     </body>

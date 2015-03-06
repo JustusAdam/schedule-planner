@@ -1,6 +1,6 @@
 package form
 
-
+import calculator.datamodel.Lesson
 
 /**
  * @author justusadam

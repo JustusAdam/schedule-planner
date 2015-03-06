@@ -16,8 +16,8 @@ object Application extends Controller {
     Ok(views.html.main("Schedule Planner"))
   }
 
-//  def handle = Action { implicit request =>
-//
-//    Ok()
-//  }
+  def handle = Action { implicit request =>
+
+    Ok()
+  }
 }
