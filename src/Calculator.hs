@@ -46,10 +46,9 @@ formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf "%10v" (case (Map.lookup i hours) of
+      printf "%10v" $ case (Map.lookup i hours) of
                         Nothing -> []
                         Just (Lesson {subject=subject}) -> subject
-                      )
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (i, j) | j <- l]
@@ -58,7 +57,7 @@ formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
 
 
 totalWeight :: MappedSchedule -> Int
-totalWeight m = Map.foldl (+) 0 (Map.map (\(Lesson {weight=weight}) -> weight) m)
+totalWeight m = Map.foldl (+) 0 $ Map.map (\(Lesson {weight=weight}) -> weight) m
 
 
 -- Main evaluation function
@@ -70,9 +69,9 @@ totalWeight m = Map.foldl (+) 0 (Map.map (\(Lesson {weight=weight}) -> weight) m
 calc :: [Lesson] -> [MappedSchedule]
 calc lessons =
   let
-    mappedLessons = Map.fromListWith (++) (map (\x -> (subject x, [x])) lessons)
+    mappedLessons = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
     sortedLessons = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
-    (minListPrimer, listsValues) = unzip (map (\(t, (x : xs)) -> (x, (t, xs))) (Map.toList sortedLessons))
+    (minListPrimer, listsValues) = unzip $ map (\(t, (x : xs)) -> (x, (t, xs))) $ Map.toList sortedLessons
     lists = Map.fromList listsValues
     (x : minList) = List.sortBy (Ord.comparing weight) minListPrimer
   in
