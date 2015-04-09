@@ -3,6 +3,8 @@ module Calculator where
 import qualified Data.Map as Map
 import Data.List as List
 import qualified Data.Ord as Ord
+import Debug.Trace
+import Text.Printf
 
 
 
@@ -17,16 +19,17 @@ data Lesson = Lesson {
 time :: Lesson -> (Int, Int)
 time (Lesson {day=day, number=number}) = (day, number)
 
+
 calc :: [Lesson] -> [Map.Map (Int, Int) Lesson]
 calc lessons =
   let
-    mappedLessons = List.groupBy (\(Lesson {weight=x}) (Lesson {weight=y}) -> x == y) lessons
-    sortedLessons = map (List.sortBy (Ord.comparing subject)) mappedLessons
-    (minListPrimer, listsValues) = unzip (map (\(x : xs) -> (x, ((subject x), xs))) sortedLessons)
+    mappedLessons = Map.fromListWith (++) (map (\x -> (subject x, [x])) lessons)
+    sortedLessons = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
+    (minListPrimer, listsValues) = unzip (map (\(t, (x : xs)) -> (x, (t, xs))) (Map.toList sortedLessons))
     lists = Map.fromList listsValues
     (x : minList) = List.sortBy (Ord.comparing weight) minListPrimer
   in
-    calcStep x lists (Map.empty) minList
+    calcStep x (trace (printf "\n%v\n" (show lists)) lists) (Map.empty) (trace (printf "\n%v\n" (show minList)) minList)
 
 
 
