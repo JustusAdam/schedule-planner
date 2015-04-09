@@ -1,21 +1,44 @@
 module Calculator where
 
-import qualified Data.Map as Map
-import Data.List as List
-import qualified Data.Ord as Ord
+import           Data.List   as List
+import qualified Data.Map    as Map
+import qualified Data.Ord    as Ord
+import           Text.Printf
 
 
 
 data Lesson = Lesson {
-  number :: Int,
-  day :: Int,
-  weight :: Int,
+  number  :: Int,
+  day     :: Int,
+  weight  :: Int,
   subject :: String
 } deriving (Show)
 
 
 time :: Lesson -> (Int, Int)
 time (Lesson {day=day, number=number}) = (day, number)
+
+
+formatSchedule :: Map.Map (Int, Int) Lesson -> String
+formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
+  where
+    allHours = [(i, [1..7]) | i <- [1..7]]
+
+    formatLesson :: (Int, Int) -> String
+    formatLesson i =
+      printf "%10v" (case (Map.lookup i hours) of
+                        Nothing -> []
+                        Just (Lesson {subject=subject}) -> subject
+                      )
+
+    formatDay :: (Int, [Int]) -> String
+    formatDay (i, l) = intercalate " | " [formatLesson (i, j) | j <- l]
+
+    header = printf "Total Weight: %10v" (totalWeight hours)
+
+
+totalWeight :: Map.Map (Int, Int) Lesson -> Int
+totalWeight m = Map.foldl (+) 0 (Map.map (\(Lesson {weight=weight}) -> weight) m)
 
 
 calc :: [Lesson] -> [Map.Map (Int, Int) Lesson]
