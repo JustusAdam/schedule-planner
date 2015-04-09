@@ -6,6 +6,9 @@ import qualified Data.Ord    as Ord
 import           Text.Printf
 
 
+daysPerWeek = 7
+slotsPerDay = 7
+
 
 data Lesson = Lesson {
   number  :: Int,
@@ -15,6 +18,7 @@ data Lesson = Lesson {
 } deriving (Show)
 
 
+-- type aliases for readability
 type MappedLessons = Map.Map String [Lesson]
 type MappedSchedule = Map.Map (Int, Int) Lesson
 type Timeslot = (Int, Int)
@@ -24,10 +28,12 @@ time :: Lesson -> (Int, Int)
 time (Lesson {day=day, number=number}) = (day, number)
 
 
+-- Transform a MappedSchedule into a printable,
+-- and more importantly, readable String
 formatSchedule :: MappedSchedule -> String
 formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
   where
-    allHours = [(i, [1..7]) | i <- [1..7]]
+    allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
     formatLesson :: Timeslot -> String
     formatLesson i =
@@ -46,6 +52,12 @@ totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 (Map.map (\(Lesson {weight=weight}) -> weight) m)
 
 
+-- Main evaluation function
+-- Transforms a list of weighted lessons into a list of lightest schedules
+-- by branching the evaluation at avery point where there is timeslot collision
+
+-- Afterwards one may obtain the lightest schedule by evaluating the `min` with
+-- the `totalWeight` function
 calc :: [Lesson] -> [MappedSchedule]
 calc lessons =
   let
@@ -58,7 +70,8 @@ calc lessons =
     calcStep x lists (Map.empty) minList
 
 
-
+-- Helper function for calc
+-- represents a recusively called and forking calculation step
 calcStep :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
 calcStep x lists hourMap minList =
   case (Map.lookup (time x) hourMap) of
@@ -78,11 +91,11 @@ calcStep x lists hourMap minList =
   where
     newMap = Map.insert (time x) x hourMap
 
-reduceLists :: String -> MappedLessons -> (MappedSchedule -> [Lesson] -> [MappedSchedule])
-reduceLists s lists =
-  case (Map.lookup s lists) of
-    Nothing -> noResult
-    Just [] -> noResult
-    Just (c : cs) -> calcStep c (Map.insert s cs lists)
-    where
-      noResult = \y x -> []
+    reduceLists :: String -> MappedLessons -> (MappedSchedule -> [Lesson] -> [MappedSchedule])
+    reduceLists s lists =
+      case (Map.lookup s lists) of
+        Nothing -> noResult
+        Just [] -> noResult
+        Just (c : cs) -> calcStep c (Map.insert s cs lists)
+        where
+          noResult = \y x -> []
