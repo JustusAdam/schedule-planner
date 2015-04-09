@@ -3,8 +3,6 @@ module Calculator where
 import qualified Data.Map as Map
 import Data.List as List
 import qualified Data.Ord as Ord
-import Debug.Trace
-import Text.Printf
 
 
 
@@ -29,7 +27,7 @@ calc lessons =
     lists = Map.fromList listsValues
     (x : minList) = List.sortBy (Ord.comparing weight) minListPrimer
   in
-    calcStep x (trace (printf "\n%v\n" (show lists)) lists) (Map.empty) (trace (printf "\n%v\n" (show minList)) minList)
+    calcStep x lists (Map.empty) minList
 
 
 
