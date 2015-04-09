@@ -1,9 +1,18 @@
-module Calculator where
+module Calculator (
+  calc,
+  formatSchedule,
+  totalWeight,
+  Lesson (..),
+  MappedLessons (..),
+  MappedSchedule (..),
+  Timeslot (..)
+  ) where
 
-import           Data.List   as List
-import qualified Data.Map    as Map
-import qualified Data.Ord    as Ord
-import           Text.Printf
+import           Data.List   as List (intercalate, sortBy)
+import qualified Data.Map    as Map (Map, empty, foldl, fromList, fromListWith,
+                                     insert, lookup, map, toList)
+import qualified Data.Ord    as Ord (comparing)
+import           Text.Printf (printf)
 
 
 daysPerWeek = 7
