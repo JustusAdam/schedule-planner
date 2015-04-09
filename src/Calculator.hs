@@ -15,16 +15,21 @@ data Lesson = Lesson {
 } deriving (Show)
 
 
+type MappedLessons = Map.Map String [Lesson]
+type MappedSchedule = Map.Map (Int, Int) Lesson
+type Timeslot = (Int, Int)
+
+
 time :: Lesson -> (Int, Int)
 time (Lesson {day=day, number=number}) = (day, number)
 
 
-formatSchedule :: Map.Map (Int, Int) Lesson -> String
+formatSchedule :: MappedSchedule -> String
 formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
   where
     allHours = [(i, [1..7]) | i <- [1..7]]
 
-    formatLesson :: (Int, Int) -> String
+    formatLesson :: Timeslot -> String
     formatLesson i =
       printf "%10v" (case (Map.lookup i hours) of
                         Nothing -> []
@@ -37,11 +42,11 @@ formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
     header = printf "Total Weight: %10v" (totalWeight hours)
 
 
-totalWeight :: Map.Map (Int, Int) Lesson -> Int
+totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 (Map.map (\(Lesson {weight=weight}) -> weight) m)
 
 
-calc :: [Lesson] -> [Map.Map (Int, Int) Lesson]
+calc :: [Lesson] -> [MappedSchedule]
 calc lessons =
   let
     mappedLessons = Map.fromListWith (++) (map (\x -> (subject x, [x])) lessons)
@@ -54,7 +59,7 @@ calc lessons =
 
 
 
-calcStep :: Lesson -> Map.Map String [Lesson] -> Map.Map (Int, Int) Lesson -> [Lesson] -> [Map.Map (Int, Int) Lesson]
+calcStep :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
 calcStep x lists hourMap minList =
   case (Map.lookup (time x) hourMap) of
     Nothing ->
@@ -73,7 +78,7 @@ calcStep x lists hourMap minList =
   where
     newMap = Map.insert (time x) x hourMap
 
-reduceLists :: String -> Map.Map String [Lesson] -> (Map.Map (Int, Int) Lesson -> [Lesson] -> [Map.Map (Int, Int) Lesson])
+reduceLists :: String -> MappedLessons -> (MappedSchedule -> [Lesson] -> [MappedSchedule])
 reduceLists s lists =
   case (Map.lookup s lists) of
     Nothing -> noResult
