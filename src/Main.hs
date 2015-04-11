@@ -2,6 +2,7 @@ module Main where
 
 import           Calculator
 import qualified Data.Map   as Map
+import Scale
 
 
 main :: IO()
@@ -20,5 +21,7 @@ main = do
   putStrLn "\n"
   let calc = Calculator.calc lessons
 
-  sequence $ map (\x -> putStrLn ("\n\n" ++ (formatSchedule x))) calc
+  pc calc
   return ()
+  where
+    pc = \y -> sequence $ map (\x -> putStrLn ("\n\n" ++ (formatSchedule x))) y
