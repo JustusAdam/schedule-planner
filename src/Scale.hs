@@ -46,8 +46,10 @@ calcMaps :: [Rule] -> WeightMapTuple
 calcMaps r
   | (List.null r) = allEmpty
   | otherwise     = calcMapsStep r allEmpty
+
   where
     allEmpty = (Map.empty, Map.empty, Map.empty)
+
 
 calcMapsStep :: [Rule] -> WeightMapTuple -> WeightMapTuple
 calcMapsStep [] mt                          = mt

@@ -23,5 +23,6 @@ main = do
 
   pc calc
   return ()
+  
   where
     pc = \y -> sequence $ map (\x -> putStrLn ("\n\n" ++ (formatSchedule x))) y

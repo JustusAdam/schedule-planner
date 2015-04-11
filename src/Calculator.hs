@@ -42,7 +42,9 @@ time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 -- Transform a MappedSchedule into a printable,
 -- and more importantly, readable String
 formatSchedule :: MappedSchedule -> String
-formatSchedule hours = intercalate "\n" $ [header] ++ (map formatDay allHours)
+formatSchedule hours =
+  intercalate "\n" $ [header] ++ (map formatDay allHours)
+
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
