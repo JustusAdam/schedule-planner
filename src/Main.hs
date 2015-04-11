@@ -1,8 +1,8 @@
 module Main where
 
 import           Calculator
-import qualified Data.Map   as Map
-import Scale
+import qualified Data.Map.Lazy   as Map
+import           Scale
 
 
 main :: IO()

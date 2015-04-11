@@ -2,17 +2,19 @@ module Calculator (
   calc,
   formatSchedule,
   totalWeight,
+  time,
   Lesson (..),
   MappedLessons (..),
   MappedSchedule (..),
   Timeslot (..)
   ) where
 
-import           Data.List   as List (intercalate, sortBy)
-import qualified Data.Map    as Map (Map, empty, foldl, fromList, fromListWith,
-                                     insert, lookup, map, toList)
-import qualified Data.Ord    as Ord (comparing)
-import           Text.Printf (printf)
+import           Data.List     as List (intercalate, sortBy)
+import qualified Data.Map.Lazy as Map (Map, empty, foldl, fromList,
+                                       fromListWith, insert, lookup, map,
+                                       toList)
+import qualified Data.Ord      as Ord (comparing)
+import           Text.Printf   (printf)
 
 
 daysPerWeek = 7
@@ -20,10 +22,10 @@ slotsPerDay = 7
 
 
 data Lesson = Lesson {
-  number  :: Int,
-  day     :: Int,
-  weight  :: Int,
-  subject :: String
+  timeslot :: Int,
+  day      :: Int,
+  weight   :: Int,
+  subject  :: String
 } deriving (Show)
 
 
@@ -34,7 +36,7 @@ type Timeslot = (Int, Int)
 
 
 time :: Lesson -> (Int, Int)
-time (Lesson {day=day, number=number}) = (day, number)
+time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 
 
 -- Transform a MappedSchedule into a printable,
