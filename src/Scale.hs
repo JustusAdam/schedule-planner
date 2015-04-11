@@ -51,12 +51,13 @@ calcMaps r
 
 calcMapsStep :: [Rule] -> WeightMapTuple -> WeightMapTuple
 calcMapsStep [] mt                          = mt
-calcMapsStep ((Rule t sev):xs) (ms, md, mc) =
-  case t of
-    Slot s      -> ((increase s sev ms), md, mc)
-    Day d       -> (ms, (increase d sev md), mc)
-    Cell c1 c2  -> (ms, md, (increase (c1, c2) sev mc))
+calcMapsStep ((Rule t sev):xs) (ms, md, mc) = calcMapsStep xs newMaps
 
   where
     increase :: Ord k => k -> Int -> Map.Map k Int -> Map.Map k Int
     increase = Map.insertWith (+)
+
+    newMaps = case t of
+                Slot s      -> ((increase s sev ms), md, mc)
+                Day d       -> (ms, (increase d sev md), mc)
+                Cell c1 c2  -> (ms, md, (increase (c1, c2) sev mc))
