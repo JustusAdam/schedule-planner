@@ -12,11 +12,83 @@ main function and outside communication for this software
 module Main where
 
 import           Calculator.Solver
-import           Calculator.Scale
-import qualified Data.Map.Lazy   as Map
+import Calculator.Scale
+import Text.JSON as JSON
 
 
--- getFromFile :: String -> IO()
+stdFileName = "../testsuite/test.json"
+
+ruleKey = "rules"
+lessonKey = "lessons"
+
+
+getFromFile :: JSON a => String -> IO(Result a)
+getFromFile filename = do
+  string <- readFile filename
+  return $ decodeStrict string
+
+
+toNative :: JSON a => Result a -> Result ([Rule], [Lesson])
+toNative i = do
+  v <- i
+  inner v
+  where
+    inner :: JSValue -> Result ([Rule], [Lesson])
+    inner JSObject o = do
+      rv <- valFromObj ruleKey o
+      lv <- valFromObj lessonKey o
+
+      rules <- extractRules rv
+      lessons <- extractLessons lv
+
+      return (rules, lessons)
+    inner _ = Error ("wrong value type")
+
+
+extractRules :: JSValue -> Result [Result Rule]
+extractRules JSArray a = do
+  rv <- a
+  return handleOne rv
+
+  where
+    handleOne :: JSValue -> Result Rule
+    handleOne JSObject o = do
+      scope <- valFromObj "scope" o
+      severity <- valFromObj "severity" o
+
+      let rp = \x -> Rule x severity
+
+
+      day <- valFromObj "day" o
+      slot <- valFromObj "slot" o
+
+      case scope of
+        "day" ->
+          return rp (Day day)
+        "slot" ->
+          return rp (Slot slot)
+        "cell" ->
+          return rp (Cell day slot)
+
+    handleOne _ = Error "wrong value type"
+
+extractRules _ = Error "wrong value type"
+
+
+extractLessons :: JSValue -> Result [Result Lesson]
+extractLessons JSArray a = do
+  lv <- a
+  return handleOne lv
+  where
+    handleOne :: JSValue -> Result Lesson
+    handleOne JSObject o = do
+      subject <- valFromObj "subject" o
+      day <- valFromObj "day" o
+      slot <- valFromObj "slot" o
+      return Lesson slot day 0 subject
+    handleOne _ = Error "wrong type"
+
+extractLessons _ = Error "wrong value type"
 
 
 main :: IO()
@@ -31,11 +103,11 @@ main = do
           Lesson 1 2 3 "FS"
         ]
   putStrLn "\n"
-  mapM print lessons
+  _ <- mapM print lessons
   putStrLn "\n"
   let calculated = calc lessons
 
-  pc calculated
+  _ <- pc calculated
   return ()
 
   where
