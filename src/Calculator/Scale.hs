@@ -95,7 +95,7 @@ calcMaps r
 -}
 calcMapsStep :: [Rule] -> WeightMapTuple -> WeightMapTuple
 calcMapsStep [] mt                          = mt
-calcMapsStep (Rule t sev :xs) (ms, md, mc) = calcMapsStep xs newMaps
+calcMapsStep (Rule t sev :xs) (ms, md, mc)  = calcMapsStep xs newMaps
 
   where
     increase :: Ord k => k -> Int -> Map.Map k Int -> Map.Map k Int

@@ -1,0 +1,225 @@
+{
+    "rules": [],
+    "lessons": [
+        {
+            "day": 1,
+            "slot": 2,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 1,
+            "slot": 6,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 2,
+            "slot": 1,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 2,
+            "slot": 2,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 2,
+            "slot": 6,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 3,
+            "slot": 1,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 3,
+            "slot": 4,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 3,
+            "slot": 5,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 3,
+            "slot": 6,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 4,
+            "slot": 5,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 4,
+            "slot": 5,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 5,
+            "slot": 1,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 5,
+            "slot": 2,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 5,
+            "slot": 5,
+            "name": "Datenbanken - Grundlagen"
+        },
+        {
+            "day": 1,
+            "slot": 3,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 2,
+            "slot": 1,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 2,
+            "slot": 2,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 2,
+            "slot": 2,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 2,
+            "slot": 6,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 3,
+            "slot": 6,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 4,
+            "slot": 6,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 5,
+            "slot": 1,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 5,
+            "slot": 4,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 5,
+            "slot": 5,
+            "name": "Rechnerarchitektur II"
+        },
+        {
+            "day": 1,
+            "slot": 4,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 2,
+            "slot": 1,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 2,
+            "slot": 2,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 2,
+            "slot": 4,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 3,
+            "slot": 1,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 3,
+            "slot": 5,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 4,
+            "slot": 1,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 4,
+            "slot": 4,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 4,
+            "slot": 5,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 5,
+            "slot": 1,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 5,
+            "slot": 2,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 5,
+            "slot": 4,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 5,
+            "slot": 4,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 5,
+            "slot": 5,
+            "name": "Rechnernetze"
+        },
+        {
+            "day": 2,
+            "slot": 1,
+            "name": "Theoretische Informatik und Logik"
+        },
+        {
+            "day": 3,
+            "slot": 1,
+            "name": "Theoretische Informatik und Logik"
+        },
+        {
+            "day": 4,
+            "slot": 1,
+            "name": "Theoretische Informatik und Logik"
+        },
+        {
+            "day": 5,
+            "slot": 1,
+            "name": "Theoretische Informatik und Logik"
+        },
+        {
+            "day": 5,
+            "slot": 4,
+            "name": "Theoretische Informatik und Logik"
+        },
+        {
+            "day": 5,
+            "slot": 5,
+            "name": "Theoretische Informatik und Logik"
+        }
+    ]
+}

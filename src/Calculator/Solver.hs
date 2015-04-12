@@ -30,7 +30,7 @@ import qualified Data.Ord      as Ord (comparing)
 import           Text.Printf   (printf)
 
 
-daysPerWeek = 7
+daysPerWeek = 6
 slotsPerDay = 7
 
 
@@ -91,6 +91,7 @@ totalWeight m = Map.foldl (+) 0 $ Map.map weight m
   by branching the evaluation at avery point where there is a timeslot collision
 -}
 calc :: [Lesson] -> [MappedSchedule]
+calc [] = []
 calc lessons =
   calcStep x lists Map.empty minList
   where
