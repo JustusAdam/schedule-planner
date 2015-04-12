@@ -27,18 +27,18 @@ getFromFile filename = do
   return $ decodeStrict string
 
 
-toNative :: Result JSValue -> Result ([Rule], [Lesson])
+toNative :: Result JSValue -> Result ([Result Rule], [Result Lesson])
 toNative i = do
   v <- i
   inner v
 
   where
-    inner :: JSValue -> Result ([Rule], [Lesson])
-    inner JSObject o  = do
+    inner :: JSValue -> Result ([Result Rule], [Result Lesson])
+    inner (JSObject o)  = do
       rv      <- valFromObj ruleKey o
       lv      <- valFromObj lessonKey o
 
-      rules   <- extractRules rv
+      rules <- extractRules rv
       lessons <- extractLessons lv
 
       return (rules, lessons)
@@ -46,13 +46,12 @@ toNative i = do
 
 
 extractRules :: JSValue -> Result [Result Rule]
-extractRules JSArray a  = do
-  rv <- a
-  return handleOne rv
+extractRules (JSArray rv)  = do
+  return (map handleOne rv)
 
   where
     handleOne :: JSValue -> Result Rule
-    handleOne JSObject o  = do
+    handleOne (JSObject o)  = do
       scope     <- valFromObj "scope" o
       severity  <- valFromObj "severity" o
 
@@ -64,29 +63,28 @@ extractRules JSArray a  = do
 
       case scope of
         "day" ->
-          return rp $ Day day
+          return $ rp $ Day day
         "slot" ->
-          return rp $ Slot slot
+          return $ rp $ Slot slot
         "cell" ->
-          return rp $ Cell day slot
+          return $ rp $ Cell day slot
 
     handleOne _           = Error "wrong value type"
 
-extractRules _          = Error "wrong value type"
+extractRules _          = Error "key lessons does not contain array"
 
 
 extractLessons :: JSValue -> Result [Result Lesson]
-extractLessons JSArray a  = do
-  lv <- a
-  return handleOne lv
+extractLessons (JSArray a)  = do
+  return (map handleOne a)
 
   where
     handleOne :: JSValue -> Result Lesson
-    handleOne JSObject o  = do
+    handleOne (JSObject o)  = do
       subject <- valFromObj "subject" o
       day     <- valFromObj "day" o
       slot    <- valFromObj "slot" o
-      return Lesson slot day 0 subject
+      return (Lesson slot day 0 subject)
     handleOne _           = Error "wrong type"
 
 extractLessons _          = Error "wrong value type"
