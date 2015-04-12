@@ -13,4 +13,4 @@ Base algorithm seems to work, will add UI soon.
 
 None yet :D
 
-You may test it right now just executing the program `dist/`
+You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner`

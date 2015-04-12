@@ -16,9 +16,17 @@ import Calculator.Scale
 import Text.JSON as JSON
 
 
-stdFileName = "../testsuite/test.json"
-ruleKey     = "rules"
-lessonKey   = "lessons"
+stdFileName   = "../testsuite/test.json"
+ruleKey       = "rules"
+lessonKey     = "lessons"
+scopeKey      = "scope"
+severityKey   = "severity"
+ruleDayKey    = "day"
+ruleSlotKey   = "slot"
+subjectKey    = "subject"
+lessonDayKey  = "day"
+lessonSlotKey = "slot"
+
 
 
 getFromFile :: JSON a => String -> IO(Result a)
@@ -38,11 +46,11 @@ toNative i = do
       rv      <- valFromObj ruleKey o
       lv      <- valFromObj lessonKey o
 
-      rules <- extractRules rv
+      rules   <- extractRules rv
       lessons <- extractLessons lv
 
       return (rules, lessons)
-    inner _           = Error ("wrong value type")
+    inner _             = Error ("wrong value type")
 
 
 extractRules :: JSValue -> Result [Result Rule]
@@ -52,14 +60,14 @@ extractRules (JSArray rv)  = do
   where
     handleOne :: JSValue -> Result Rule
     handleOne (JSObject o)  = do
-      scope     <- valFromObj "scope" o
-      severity  <- valFromObj "severity" o
+      scope     <- valFromObj scopeKey o
+      severity  <- valFromObj severityKey o
 
       let rp = \x -> Rule x severity
 
 
-      day       <- valFromObj "day" o
-      slot      <- valFromObj "slot" o
+      day       <- valFromObj ruleDayKey o
+      slot      <- valFromObj ruleSlotKey o
 
       case scope of
         "day" ->
@@ -81,9 +89,9 @@ extractLessons (JSArray a)  = do
   where
     handleOne :: JSValue -> Result Lesson
     handleOne (JSObject o)  = do
-      subject <- valFromObj "subject" o
-      day     <- valFromObj "day" o
-      slot    <- valFromObj "slot" o
+      subject <- valFromObj subjectKey o
+      day     <- valFromObj lessonDayKey o
+      slot    <- valFromObj lessonSlotKey o
       return (Lesson slot day 0 subject)
     handleOne _           = Error "wrong type"
 
