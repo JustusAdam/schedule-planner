@@ -11,6 +11,6 @@ Base algorithm seems to work, will add UI soon.
 
 ## Usage
 
-None yet :D
+You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner filepath.json`
 
-You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner`
+It currently works on raw rule and lesson data provided by the file `filepath.json`. You can find an example of such a file in `testsuite/test.json`.
