@@ -56,7 +56,7 @@ time :: Lesson -> Timeslot
 time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 
 
-{-
+{-|
   Transform a MappedSchedule into a printable,
   and more importantly, readable String
 -}
@@ -81,7 +81,7 @@ totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 $ Map.map weight m
 
 
-{-
+{-|
   Main evaluation function
   Transforms a list of weighted 'Lesson's into a list of lightest schedules
   by branching the evaluation at avery point where there is a timeslot collision
@@ -97,7 +97,7 @@ calc lessons =
     (x : minList)                 = List.sortBy (Ord.comparing weight) minListPrimer
 
 
-{-
+{-|
   Helper function for calc
   represents a recusively called and forking calculation step
 -}

@@ -9,7 +9,7 @@ Portability : POSIX
 
 This module is used to weigh a list of lessons according to rules.
 -}
-module Scale where
+module Scale (weigh) where
 
 import           Calculator
 import           Data.List     as List
@@ -32,7 +32,7 @@ type CellWeighMap   = Map.Map (Int, Int) Int
 type WeightMapTuple = (SlotWeightMap, DayWeightMap, CellWeighMap)
 
 
-{-
+{-|
   Main function of the module.
 
   This funcion calculates weights the 'Calculator.Lesson's provided applying the
@@ -52,7 +52,7 @@ weigh rs ls = do
     maps = calcMaps rs
 
 
-{-
+{-|
   Weighs a single 'Calculator.Lesson', but instead of 'Rule's expects a
   'Tuple' of weight increase maps.
 -}
@@ -72,7 +72,7 @@ weighOne (ms, md, mc) l =
     cellWeight = getOrZero (time l) mc
 
 
-{-
+{-|
   Contruct a 'Tuple' of /scope -> weight increase/ maps for more efficient
   weighing afterwards
 -}
@@ -85,7 +85,7 @@ calcMaps r
     allEmpty = (Map.empty, Map.empty, Map.empty)
 
 
-{-
+{-|
   Recursive step for the actual calculation done by calcMaps
 -}
 calcMapsStep :: [Rule] -> WeightMapTuple -> WeightMapTuple
