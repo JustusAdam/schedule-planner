@@ -7,13 +7,16 @@ Maintainer  : development@justusadam.com
 Stability   : experimental
 Portability : POSIX
 
-main function and outside communication for this software
+main function and outside communication for this software.
+This module takes care of reading all input and checking for correctness
+as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
 import           Calculator.Scale
 import           Calculator.Solver
 import           System.Environment
+import           System.IO
 import           Text.JSON          as JSON
 
 
@@ -29,7 +32,7 @@ lessonDayKey  = "day"
 lessonSlotKey = "slot"
 
 
-testLessons = [
+testLessons   = [
         Lesson 1 1 2 "TGI",
         Lesson 1 1 2 "FS",
         Lesson 1 1 1 "TGI",
@@ -40,12 +43,19 @@ testLessons = [
       ]
 
 
+-- |Print a line to stdout
+putErrorLine :: String -> IO()
+putErrorLine = hPutStrLn stderr
+
+
+-- |Open a file and return the contents as parsed json
 getFromFile :: JSON a => String -> IO(Result a)
 getFromFile filename = do
   string <- readFile filename
   return $ decodeStrict string
 
 
+-- |Turns parsed json values into the internally used datastructures.
 toNative :: Result JSValue -> Result ([Result Rule], [Result Lesson])
 toNative i = do
   v <- i
@@ -64,9 +74,10 @@ toNative i = do
     inner _             = Error "wrong value type"
 
 
+-- |Turns a parsed json value into a 'List' of 'Rule's or return an 'Error'
 extractRules :: JSValue -> Result [Result Rule]
 extractRules (JSArray rv)  =
-  return (map handleOne rv)
+  return $ map handleOne rv
 
   where
     handleOne :: JSValue -> Result Rule
@@ -93,9 +104,10 @@ extractRules (JSArray rv)  =
 extractRules _             = Error "key lessons does not contain array"
 
 
+-- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
 extractLessons :: JSValue -> Result [Result Lesson]
 extractLessons (JSArray a)  =
-  return (map handleOne a)
+  return $ map handleOne a
 
   where
     handleOne :: JSValue -> Result Lesson
@@ -103,16 +115,20 @@ extractLessons (JSArray a)  =
       subject <- valFromObj subjectKey o
       day     <- valFromObj lessonDayKey o
       slot    <- valFromObj lessonSlotKey o
-      return (Lesson slot day 0 subject)
-    handleOne _           = Error "wrong type"
+      return $ Lesson slot day 0 subject
+    handleOne _             = Error "wrong type"
 
-extractLessons _          = Error "wrong value type"
+extractLessons _            = Error "wrong value type"
 
 
+{-|
+  Evaluates the transformed json, compiles (useful) error messages, prints them
+  and then runs the algorithm or, if the errors are too severe, abourts.
+-}
 reportAndExecute :: Result ([Result Rule], [Result Lesson]) -> IO()
 reportAndExecute (Error s)    = do
-  putStrLn "Stopped execution due to a severe problem with the input data:"
-  putStrLn s
+  putErrorLine "Stopped execution due to a severe problem with the input data:"
+  putErrorLine s
 reportAndExecute (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
@@ -139,19 +155,23 @@ reportAndExecute (Ok (r, l))  = do
     pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
 
     reportOrReturn :: [Result a] -> IO [a]
-    reportOrReturn []     = 
+    reportOrReturn []     =
       return []
     reportOrReturn (x:xs) =
       case x of
         Error s -> do
-          putStrLn "Some data was unusable:"
-          putStrLn s
+          putErrorLine "Some data was unusable:"
+          putErrorLine s
           reportOrReturn xs
         Ok v    -> do
           ps <- reportOrReturn xs
           return (v:ps)
 
 
+{-|
+  main function. Handles reading command line arguments, the json input
+  and starting execution.
+-}
 main :: IO()
 main = do
   args <- getArgs
