@@ -32,12 +32,13 @@ daysPerWeek = 7
 slotsPerDay = 7
 
 
+-- |Base datastructure for representing lessons
 data Lesson = Lesson {
   timeslot :: Int,
   day      :: Int,
   weight   :: Int,
   subject  :: String
-} deriving (Show)
+} deriving (Show, Eq, Ord)
 
 
 -- |type Alias for readability
@@ -57,12 +58,12 @@ time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 
 
 {-|
-  Transform a MappedSchedule into a printable,
+  Transform a 'MappedSchedule' into a printable,
   and more importantly, readable String
 -}
 formatSchedule :: MappedSchedule -> String
 formatSchedule hours =
-  intercalate "\n" $ [header] ++ (map formatDay allHours)
+  intercalate "\n" $ header : map formatDay allHours
 
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
@@ -88,25 +89,25 @@ totalWeight m = Map.foldl (+) 0 $ Map.map weight m
 -}
 calc :: [Lesson] -> [MappedSchedule]
 calc lessons =
-  calcStep x lists (Map.empty) minList
+  calcStep x lists Map.empty minList
   where
     mappedLessons                 = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
     sortedLessons                 = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
-    (minListPrimer, listsValues)  = unzip $ map (\(t, (x : xs)) -> (x, (t, xs))) $ Map.toList sortedLessons
+    (minListPrimer, listsValues)  = unzip $ map (\(t, x : xs) -> (x, (t, xs))) $ Map.toList sortedLessons
     lists                         = Map.fromList listsValues
     (x : minList)                 = List.sortBy (Ord.comparing weight) minListPrimer
 
 
 {-|
-  Helper function for calc
+  Helper function for 'calc'
   represents a recusively called and forking calculation step
 -}
 calcStep :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
 calcStep x lists hourMap minList =
-  case (Map.lookup (time x) hourMap) of
+  case Map.lookup (time x) hourMap of
 
     Nothing   ->
-      if (null minList)
+      if null minList
         then
           [newMap]
         else
@@ -115,19 +116,19 @@ calcStep x lists hourMap minList =
 
     Just old  ->
       let
-        r1 = (reduceLists (subject x) lists) hourMap minList
-        r2 = (reduceLists (subject old) lists) newMap minList
+        r1 = reduceLists (subject x) lists hourMap minList
+        r2 = reduceLists (subject old) lists newMap minList
       in
       r1 ++ r2
 
   where
     newMap = Map.insert (time x) x hourMap
 
-    reduceLists :: String -> MappedLessons -> (MappedSchedule -> [Lesson] -> [MappedSchedule])
+    reduceLists :: String -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
     reduceLists s lists =
-      case (Map.lookup s lists) of
+      case Map.lookup s lists of
         Nothing       -> noResult
         Just []       -> noResult
         Just (c : cs) -> calcStep c (Map.insert s cs lists)
         where
-          noResult = \y x -> []
+          noResult y x = []

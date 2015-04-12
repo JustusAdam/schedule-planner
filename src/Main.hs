@@ -28,7 +28,7 @@ main = do
           Lesson 1 2 3 "FS"
         ]
   putStrLn "\n"
-  sequence $ map print lessons
+  mapM print lessons
   putStrLn "\n"
   let calc = Calculator.calc lessons
 
@@ -36,4 +36,4 @@ main = do
   return ()
 
   where
-    pc = \y -> sequence $ map (\x -> putStrLn ("\n\n" ++ (formatSchedule x))) y
+    pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
