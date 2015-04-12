@@ -1,3 +1,14 @@
+{-|
+Module      : $Header$
+Description : Interface for schedule-planner
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
+
+main function and outside communication for this software
+-}
 module Main where
 
 import           Calculator
@@ -23,6 +34,6 @@ main = do
 
   pc calc
   return ()
-  
+
   where
     pc = \y -> sequence $ map (\x -> putStrLn ("\n\n" ++ (formatSchedule x))) y

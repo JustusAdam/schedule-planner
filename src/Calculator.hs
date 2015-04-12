@@ -1,11 +1,22 @@
+{-|
+Module      : $Header$
+Description : Calculate schedules
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
+
+This module provides functions for calculating possibilities for an ideal
+schedule layout from weighted Lessons as well as providing functions for
+converting them into readable/printable format.
+-}
 module Calculator (
   calc,
   formatSchedule,
   totalWeight,
   time,
   Lesson (..),
-  MappedLessons (..),
-  MappedSchedule (..),
   Timeslot (..)
   ) where
 
@@ -29,18 +40,26 @@ data Lesson = Lesson {
 } deriving (Show)
 
 
--- type aliases for readability
+-- |type Alias for readability
+-- maps lessons to their respective subject
 type MappedLessons  = Map.Map String [Lesson]
-type MappedSchedule = Map.Map (Int, Int) Lesson
+-- |type Alias for readability
+-- (Slot, Day)
 type Timeslot       = (Int, Int)
+-- |type Alias for readability
+-- represents a schedule
+type MappedSchedule = Map.Map Timeslot Lesson
 
 
-time :: Lesson -> (Int, Int)
+
+time :: Lesson -> Timeslot
 time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 
 
--- Transform a MappedSchedule into a printable,
--- and more importantly, readable String
+{-
+  Transform a MappedSchedule into a printable,
+  and more importantly, readable String
+-}
 formatSchedule :: MappedSchedule -> String
 formatSchedule hours =
   intercalate "\n" $ [header] ++ (map formatDay allHours)
@@ -50,9 +69,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf "%10v" $ case (Map.lookup i hours) of
-                        Nothing                         -> []
-                        Just (Lesson {subject=subject}) -> subject
+      printf "%10v" $ maybe [] subject (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (i, j) | j <- l]
@@ -64,12 +81,11 @@ totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 $ Map.map weight m
 
 
--- Main evaluation function
--- Transforms a list of weighted lessons into a list of lightest schedules
--- by branching the evaluation at avery point where there is timeslot collision
-
--- Afterwards one may obtain the lightest schedule by evaluating the `min` with
--- the `totalWeight` function
+{-
+  Main evaluation function
+  Transforms a list of weighted 'Lesson's into a list of lightest schedules
+  by branching the evaluation at avery point where there is a timeslot collision
+-}
 calc :: [Lesson] -> [MappedSchedule]
 calc lessons =
   calcStep x lists (Map.empty) minList
@@ -81,8 +97,10 @@ calc lessons =
     (x : minList)                 = List.sortBy (Ord.comparing weight) minListPrimer
 
 
--- Helper function for calc
--- represents a recusively called and forking calculation step
+{-
+  Helper function for calc
+  represents a recusively called and forking calculation step
+-}
 calcStep :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
 calcStep x lists hourMap minList =
   case (Map.lookup (time x) hourMap) of

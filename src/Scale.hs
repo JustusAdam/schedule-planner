@@ -1,3 +1,14 @@
+{-|
+Module      : $Header$
+Description : Apply weighing rules to lessons
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
+
+This module is used to weigh a list of lessons according to rules.
+-}
 module Scale where
 
 import           Calculator
@@ -5,16 +16,31 @@ import           Data.List     as List
 import qualified Data.Map.Lazy as Map
 
 
+-- |The scope and target a 'Rule' whishes to influence
 data Target = Slot Int | Day Int | Cell Int Int
+-- |Weight increase by severity for all 'Calculator.Lesson's in target
 data Rule   = Rule {target::Target, severity::Int}
 
 
+-- |type alias for more expressive function signature
 type DayWeightMap   = Map.Map Int Int
+-- |type alias for more expressive function signature
 type SlotWeightMap  = Map.Map Int Int
+-- |type alias for more expressive function signature
 type CellWeighMap   = Map.Map (Int, Int) Int
+-- |type alias for more expressive function signature
 type WeightMapTuple = (SlotWeightMap, DayWeightMap, CellWeighMap)
 
 
+{-
+  Main function of the module.
+
+  This funcion calculates weights the 'Calculator.Lesson's provided applying the
+  'Rule's provided.
+
+  Resulting 'Calculator.Lesson's are exactly the same, except for the weight
+  component which is the old weight + the weight calculated from the rules
+-}
 weigh :: [Rule] -> [Lesson] -> [Lesson]
 weigh [] x  = x
 weigh _ []  = []
@@ -26,6 +52,10 @@ weigh rs ls = do
     maps = calcMaps rs
 
 
+{-
+  Weighs a single 'Calculator.Lesson', but instead of 'Rule's expects a
+  'Tuple' of weight increase maps.
+-}
 weighOne :: WeightMapTuple -> Lesson -> Lesson
 weighOne (ms, md, mc) l =
   l {
@@ -42,6 +72,10 @@ weighOne (ms, md, mc) l =
     cellWeight = getOrZero (time l) mc
 
 
+{-
+  Contruct a 'Tuple' of /scope -> weight increase/ maps for more efficient
+  weighing afterwards
+-}
 calcMaps :: [Rule] -> WeightMapTuple
 calcMaps r
   | (List.null r) = allEmpty
@@ -51,6 +85,9 @@ calcMaps r
     allEmpty = (Map.empty, Map.empty, Map.empty)
 
 
+{-
+  Recursive step for the actual calculation done by calcMaps
+-}
 calcMapsStep :: [Rule] -> WeightMapTuple -> WeightMapTuple
 calcMapsStep [] mt                          = mt
 calcMapsStep ((Rule t sev):xs) (ms, md, mc) = calcMapsStep xs newMaps
