@@ -61,11 +61,11 @@ toNative i = do
       lessons <- extractLessons lv
 
       return (rules, lessons)
-    inner _             = Error ("wrong value type")
+    inner _             = Error "wrong value type"
 
 
 extractRules :: JSValue -> Result [Result Rule]
-extractRules (JSArray rv)  = do
+extractRules (JSArray rv)  =
   return (map handleOne rv)
 
   where
@@ -74,27 +74,27 @@ extractRules (JSArray rv)  = do
       scope     <- valFromObj scopeKey o
       severity  <- valFromObj severityKey o
 
-      let rp = \x -> Rule x severity
-
-
-      day       <- valFromObj ruleDayKey o
-      slot      <- valFromObj ruleSlotKey o
+      let rp = (`Rule` severity)
 
       case scope of
-        "day" ->
+        "day"   -> do
+          day   <- valFromObj ruleDayKey o
           return $ rp $ Day day
-        "slot" ->
+        "slot"  -> do
+          slot  <- valFromObj ruleSlotKey o
           return $ rp $ Slot slot
-        "cell" ->
+        "cell"  -> do
+          slot  <- valFromObj ruleSlotKey o
+          day   <- valFromObj ruleDayKey o
           return $ rp $ Cell day slot
 
-    handleOne _           = Error "wrong value type"
+    handleOne _             = Error "wrong value type"
 
-extractRules _          = Error "key lessons does not contain array"
+extractRules _             = Error "key lessons does not contain array"
 
 
 extractLessons :: JSValue -> Result [Result Lesson]
-extractLessons (JSArray a)  = do
+extractLessons (JSArray a)  =
   return (map handleOne a)
 
   where
@@ -121,6 +121,10 @@ reportAndExecute (Ok (r, l))  = do
   _       <- mapM print lessons
   putStrLn "\n"
 
+  putStrLn "\n"
+  _       <- mapM print rules
+  putStrLn "\n"
+
   let weighted    = weigh rules lessons
 
   putStrLn "\n"
@@ -134,8 +138,8 @@ reportAndExecute (Ok (r, l))  = do
   where
     pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
 
-    reportOrReturn :: [Result a] -> IO([a])
-    reportOrReturn []     = do
+    reportOrReturn :: [Result a] -> IO [a]
+    reportOrReturn []     = 
       return []
     reportOrReturn (x:xs) =
       case x of

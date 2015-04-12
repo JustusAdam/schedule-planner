@@ -22,9 +22,9 @@ import qualified Data.Map.Lazy     as Map
 
 
 -- |The scope and target a 'Rule' whishes to influence
-data Target = Slot Int | Day Int | Cell Int Int
+data Target = Slot Int | Day Int | Cell Int Int deriving (Show)
 -- |Weight increase by 'severity' for all 'Lesson's in target
-data Rule   = Rule {target::Target, severity::Int}
+data Rule   = Rule {target::Target, severity::Int} deriving (Show)
 
 
 -- |type alias for more expressive function signature
