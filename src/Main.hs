@@ -11,12 +11,13 @@ main function and outside communication for this software
 -}
 module Main where
 
+import           Calculator.Scale
 import           Calculator.Solver
-import Calculator.Scale
-import Text.JSON as JSON
+import           System.Environment
+import           Text.JSON          as JSON
 
 
-stdFileName   = "../testsuite/test.json"
+stdFileName   = "testsuite/test.json"
 ruleKey       = "rules"
 lessonKey     = "lessons"
 scopeKey      = "scope"
@@ -27,6 +28,16 @@ subjectKey    = "subject"
 lessonDayKey  = "day"
 lessonSlotKey = "slot"
 
+
+testLessons = [
+        Lesson 1 1 2 "TGI",
+        Lesson 1 1 2 "FS",
+        Lesson 1 1 1 "TGI",
+        Lesson 2 2 3 "TGI",
+        Lesson 1 1 3 "RA",
+        Lesson 2 2 2 "RA",
+        Lesson 1 2 3 "FS"
+      ]
 
 
 getFromFile :: JSON a => String -> IO(Result a)
@@ -98,24 +109,49 @@ extractLessons (JSArray a)  = do
 extractLessons _          = Error "wrong value type"
 
 
-main :: IO()
-main = do
-  let lessons = [
-          Lesson 1 1 2 "TGI",
-          Lesson 1 1 2 "FS",
-          Lesson 1 1 1 "TGI",
-          Lesson 2 2 3 "TGI",
-          Lesson 1 1 3 "RA",
-          Lesson 2 2 2 "RA",
-          Lesson 1 2 3 "FS"
-        ]
-  putStrLn "\n"
-  _ <- mapM print lessons
-  putStrLn "\n"
-  let calculated = calc lessons
+reportAndExecute :: Result ([Result Rule], [Result Lesson]) -> IO()
+reportAndExecute (Error s)    = do
+  putStrLn "Stopped execution due to a severe problem with the input data:"
+  putStrLn s
+reportAndExecute (Ok (r, l))  = do
+  rules   <- reportOrReturn r
+  lessons <- reportOrReturn l
 
-  _ <- pc calculated
+  putStrLn "\n"
+  _       <- mapM print lessons
+  putStrLn "\n"
+
+  let weighted    = weigh rules lessons
+
+  putStrLn "\n"
+  _       <- mapM print weighted
+  putStrLn "\n"
+
+  let calculated  = calc weighted
+
+  _       <- pc calculated
   return ()
-
   where
     pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
+
+    reportOrReturn :: [Result a] -> IO([a])
+    reportOrReturn []     = do
+      return []
+    reportOrReturn (x:xs) =
+      case x of
+        Error s -> do
+          putStrLn "Some data was unusable:"
+          putStrLn s
+          reportOrReturn xs
+        Ok v    -> do
+          ps <- reportOrReturn xs
+          return (v:ps)
+
+
+main :: IO()
+main = do
+  args <- getArgs
+  let filename = head args
+  json <- getFromFile filename
+  let native = toNative json
+  reportAndExecute native

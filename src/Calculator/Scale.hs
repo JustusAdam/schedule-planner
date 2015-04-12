@@ -17,8 +17,8 @@ module Calculator.Scale (
 ) where
 
 import           Calculator.Solver
-import           Data.List     as List
-import qualified Data.Map.Lazy as Map
+import           Data.List         as List
+import qualified Data.Map.Lazy     as Map
 
 
 -- |The scope and target a 'Rule' whishes to influence
