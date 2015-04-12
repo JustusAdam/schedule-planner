@@ -9,9 +9,14 @@ Portability : POSIX
 
 This module is used to weigh a list of lessons according to rules.
 -}
-module Scale (weigh) where
+module Calculator.Scale (
+  weigh,
+  Rule(..),
+  Target(..),
+  calcMaps
+) where
 
-import           Calculator
+import           Calculator.Solver
 import           Data.List     as List
 import qualified Data.Map.Lazy as Map
 

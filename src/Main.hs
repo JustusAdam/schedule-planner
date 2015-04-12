@@ -11,9 +11,12 @@ main function and outside communication for this software
 -}
 module Main where
 
-import           Calculator
+import           Calculator.Solver
+import           Calculator.Scale
 import qualified Data.Map.Lazy   as Map
-import           Scale
+
+
+-- getFromFile :: String -> IO()
 
 
 main :: IO()
@@ -30,9 +33,9 @@ main = do
   putStrLn "\n"
   mapM print lessons
   putStrLn "\n"
-  let calc = Calculator.calc lessons
+  let calculated = calc lessons
 
-  pc calc
+  pc calculated
   return ()
 
   where
