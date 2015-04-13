@@ -14,3 +14,7 @@ Base algorithm seems to work, will add UI soon.
 You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner filepath.json`
 
 It currently works on raw rule and lesson data provided by the file `filepath.json`. You can find an example of such a file in `testsuite/test.json`.
+
+## Code documentation
+
+The Haddock documentation can be found on the [GitHub pages](http://justusadam.github.io/schedule-planner/)
