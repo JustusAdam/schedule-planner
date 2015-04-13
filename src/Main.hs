@@ -22,15 +22,25 @@ import           System.IO
 import           Text.JSON          as JSON
 
 
+-- |Legacy hard coded name of inputfile
 stdFileName   = "testsuite/test.json"
+-- |Key for the rules data in the json input
 ruleKey       = "rules"
+-- |Key for the lesson data in the json input
 lessonKey     = "lessons"
+-- |Key for the scope property in Rule objects in the json input
 scopeKey      = "scope"
+-- |Key for the severity property in Rule objects in the json input
 severityKey   = "severity"
+-- |Key for the day property in Rule objects in the json input
 ruleDayKey    = "day"
+-- |Key for the slot property in Rule objects in the json input
 ruleSlotKey   = "slot"
+-- |Key for the subject property in Lesson objects in the json input
 subjectKey    = "subject"
+-- |Key for the day property in Lesson objects in the json input
 lessonDayKey  = "day"
+-- |Key for the slot property in Rule objects in the json input
 lessonSlotKey = "slot"
 
 

@@ -32,9 +32,12 @@ import qualified Data.Ord      as Ord (comparing)
 import           Text.Printf   (printf)
 
 
-daysPerWeek = 6
+-- |How many days a week has
+daysPerWeek = 7
+-- |The amount of imeslots each day
 slotsPerDay = 7
-cellWidth   = 10
+-- |The caracter width of a single slot in output
+cellWidth   = 20
 
 
 -- |Base datastructure for representing lessons
