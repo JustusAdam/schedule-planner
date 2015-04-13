@@ -24,12 +24,11 @@ module Calculator.Solver (
   MappedLessons
   ) where
 
-import           Data.List     as List (intercalate, sortBy, take)
-import qualified Data.Map.Lazy as Map (Map, empty, foldl, fromList,
-                                       fromListWith, insert, lookup, map,
-                                       toList, null)
-import qualified Data.Ord      as Ord (comparing)
-import           Text.Printf   (printf)
+import           Data.List   as List (intercalate, sortBy, take)
+import qualified Data.Map    as Map (Map, empty, foldl, fromList, fromListWith,
+                                     insert, lookup, map, null, toList)
+import qualified Data.Ord    as Ord (comparing)
+import           Text.Printf (printf)
 
 
 -- |How many days a week has
