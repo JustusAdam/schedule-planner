@@ -12,7 +12,9 @@ schedule layout from weighted Lessons as well as providing functions for
 converting them into readable/printable format.
 -}
 module Calculator.Solver (
-  calc,
+  calcFromMap,
+  calcFromList,
+  mapToSubject,
   formatSchedule,
   totalWeight,
   time,
@@ -22,16 +24,17 @@ module Calculator.Solver (
   MappedLessons
   ) where
 
-import           Data.List     as List (intercalate, sortBy)
+import           Data.List     as List (intercalate, sortBy, take)
 import qualified Data.Map.Lazy as Map (Map, empty, foldl, fromList,
                                        fromListWith, insert, lookup, map,
-                                       toList)
+                                       toList, null)
 import qualified Data.Ord      as Ord (comparing)
 import           Text.Printf   (printf)
 
 
 daysPerWeek = 6
 slotsPerDay = 7
+cellWidth   = 10
 
 
 -- |Base datastructure for representing lessons
@@ -72,7 +75,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf "%10v" $ maybe [] subject (Map.lookup i hours)
+      printf ("%" ++ (show cellWidth) ++"v") $ maybe [] ((take cellWidth).subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
@@ -85,17 +88,33 @@ totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 $ Map.map weight m
 
 
-{-|
-  Main evaluation function
-  Transforms a list of weighted 'Lesson's into a list of lightest schedules
-  by branching the evaluation at avery point where there is a timeslot collision
+{-
+  Map a List of 'Lesson's to their respective subjects
 -}
-calc :: [Lesson] -> [MappedSchedule]
-calc [] = []
-calc lessons =
-  calcStep x lists Map.empty minList
+mapToSubject :: [Lesson] -> Map.Map String [Lesson]
+mapToSubject [] = Map.empty
+mapToSubject lessons = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
+
+
+{-|
+  Same as 'calcFromMap' but operates on a List of 'Lesson's
+-}
+calcFromList :: [Lesson] -> [MappedSchedule]
+calcFromList = calcFromMap.mapToSubject
+
+
+
+{-
+  Main evaluation function
+  Transforms a map of weighted 'Lesson's of a particular subject into a list
+  of lightest schedules by branching the evaluation at avery point
+  where there is a timeslot collision
+-}
+calcFromMap :: Map.Map String [Lesson] -> [MappedSchedule]
+calcFromMap mappedLessons
+  | Map.null mappedLessons = []
+  | otherwise = calcStep x lists Map.empty minList
   where
-    mappedLessons                 = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
     sortedLessons                 = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (minListPrimer, listsValues)  = unzip $ map (\(t, x : xs) -> (x, (t, xs))) $ Map.toList sortedLessons
     lists                         = Map.fromList listsValues

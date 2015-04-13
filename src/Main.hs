@@ -13,6 +13,8 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
+import qualified Data.List as List
+import qualified Data.Map as Map
 import           Calculator.Scale
 import           Calculator.Solver
 import           System.Environment
@@ -144,11 +146,17 @@ reportAndExecute (Ok (r, l))  = do
   let weighted    = weigh rules lessons
 
   putStrLn "\n"
-  _       <- mapM print weighted
+  _         <- mapM print weighted
   putStrLn "\n"
 
-  let calculated  = calc weighted
+  let mappedLessons = mapToSubject weighted
 
+  let calculated  = calcFromMap mappedLessons
+
+  putStrLn "Legend:"
+  _       <- mapM print $ map (\x -> (List.take 10 x, x)) (Map.keys mappedLessons)
+
+  putStrLn "\n"
   _       <- pc calculated
   return ()
 
