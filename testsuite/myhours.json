@@ -1,230 +1,8 @@
 {
-    "lessons": [
-        {
-            "day": 1,
-            "slot": 2,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 1,
-            "slot": 6,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 2,
-            "slot": 1,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 2,
-            "slot": 2,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 2,
-            "slot": 6,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 3,
-            "slot": 1,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 3,
-            "slot": 4,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 3,
-            "slot": 5,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 3,
-            "slot": 6,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 4,
-            "slot": 5,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 4,
-            "slot": 5,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 5,
-            "slot": 1,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 5,
-            "slot": 2,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 5,
-            "slot": 5,
-            "subject": "Datenbanken - Grundlagen"
-        },
-        {
-            "day": 1,
-            "slot": 3,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 2,
-            "slot": 1,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 2,
-            "slot": 2,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 2,
-            "slot": 2,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 2,
-            "slot": 6,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 3,
-            "slot": 6,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 4,
-            "slot": 6,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 5,
-            "slot": 1,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 5,
-            "slot": 4,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 5,
-            "slot": 5,
-            "subject": "Rechnerarchitektur II"
-        },
-        {
-            "day": 1,
-            "slot": 4,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 2,
-            "slot": 1,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 2,
-            "slot": 2,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 2,
-            "slot": 4,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 3,
-            "slot": 1,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 3,
-            "slot": 5,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 4,
-            "slot": 1,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 4,
-            "slot": 4,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 4,
-            "slot": 5,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 5,
-            "slot": 1,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 5,
-            "slot": 2,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 5,
-            "slot": 4,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 5,
-            "slot": 4,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 5,
-            "slot": 5,
-            "subject": "Rechnernetze"
-        },
-        {
-            "day": 2,
-            "slot": 1,
-            "subject": "Theoretische Informatik und Logik"
-        },
-        {
-            "day": 3,
-            "slot": 1,
-            "subject": "Theoretische Informatik und Logik"
-        },
-        {
-            "day": 4,
-            "slot": 1,
-            "subject": "Theoretische Informatik und Logik"
-        },
-        {
-            "day": 5,
-            "slot": 1,
-            "subject": "Theoretische Informatik und Logik"
-        },
-        {
-            "day": 5,
-            "slot": 4,
-            "subject": "Theoretische Informatik und Logik"
-        },
-        {
-            "day": 5,
-            "slot": 5,
-            "subject": "Theoretische Informatik und Logik"
-        }
-    ],
     "rules": [
         {
-            "scope": "day",
             "day": 5,
+            "scope": "day",
             "severity": 2
         },
         {
@@ -248,16 +26,263 @@
             "slot": 6
         },
         {
-            "scope": "cell",
             "day": 5,
+            "scope": "cell",
             "severity": 4,
             "slot": 5
         },
         {
-            "scope": "cell",
             "day": 5,
+            "scope": "cell",
             "severity": 5,
             "slot": 6
+        }
+    ],
+    "lessons": [
+        {
+            "day": 2,
+            "subject": "Datenbanken - Grundlagen VL1",
+            "slot": 3
+        },
+        {
+            "day": 1,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 2
+        },
+        {
+            "day": 1,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 6
+        },
+        {
+            "day": 2,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 1
+        },
+        {
+            "day": 2,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 2
+        },
+        {
+            "day": 2,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 6
+        },
+        {
+            "day": 3,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 1
+        },
+        {
+            "day": 3,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 4
+        },
+        {
+            "day": 3,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 5
+        },
+        {
+            "day": 3,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 6
+        },
+        {
+            "day": 4,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 5
+        },
+        {
+            "day": 4,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 5
+        },
+        {
+            "day": 5,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 1
+        },
+        {
+            "day": 5,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 2
+        },
+        {
+            "day": 5,
+            "subject": "Datenbanken - Grundlagen UE",
+            "slot": 5
+        },
+        {
+            "day": 2,
+            "subject": "Rechnerarchitektur II VL1",
+            "slot": 5
+        },
+        {
+            "day": 1,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 3
+        },
+        {
+            "day": 2,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 1
+        },
+        {
+            "day": 2,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 2
+        },
+        {
+            "day": 2,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 2
+        },
+        {
+            "day": 2,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 6
+        },
+        {
+            "day": 3,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 6
+        },
+        {
+            "day": 4,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 6
+        },
+        {
+            "day": 5,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 1
+        },
+        {
+            "day": 5,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 4
+        },
+        {
+            "day": 5,
+            "subject": "Rechnerarchitektur II UE",
+            "slot": 5
+        },
+        {
+            "day": 4,
+            "subject": "Rechnernetze VL1",
+            "slot": 3
+        },
+        {
+            "day": 1,
+            "subject": "Rechnernetze UE",
+            "slot": 4
+        },
+        {
+            "day": 2,
+            "subject": "Rechnernetze UE",
+            "slot": 1
+        },
+        {
+            "day": 2,
+            "subject": "Rechnernetze UE",
+            "slot": 2
+        },
+        {
+            "day": 2,
+            "subject": "Rechnernetze UE",
+            "slot": 4
+        },
+        {
+            "day": 3,
+            "subject": "Rechnernetze UE",
+            "slot": 1
+        },
+        {
+            "day": 3,
+            "subject": "Rechnernetze UE",
+            "slot": 5
+        },
+        {
+            "day": 4,
+            "subject": "Rechnernetze UE",
+            "slot": 1
+        },
+        {
+            "day": 4,
+            "subject": "Rechnernetze UE",
+            "slot": 4
+        },
+        {
+            "day": 4,
+            "subject": "Rechnernetze UE",
+            "slot": 5
+        },
+        {
+            "day": 5,
+            "subject": "Rechnernetze UE",
+            "slot": 1
+        },
+        {
+            "day": 5,
+            "subject": "Rechnernetze UE",
+            "slot": 2
+        },
+        {
+            "day": 5,
+            "subject": "Rechnernetze UE",
+            "slot": 4
+        },
+        {
+            "day": 5,
+            "subject": "Rechnernetze UE",
+            "slot": 4
+        },
+        {
+            "day": 5,
+            "subject": "Rechnernetze UE",
+            "slot": 5
+        },
+        {
+            "day": 1,
+            "subject": "Theoretische Informatik und Logik VL1",
+            "slot": 2
+        },
+        {
+            "day": 4,
+            "subject": "Theoretische Informatik und Logik VL2",
+            "slot": 4
+        },
+        {
+            "day": 2,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 1
+        },
+        {
+            "day": 3,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 1
+        },
+        {
+            "day": 4,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 1
+        },
+        {
+            "day": 5,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 1
+        },
+        {
+            "day": 5,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 4
+        },
+        {
+            "day": 5,
+            "subject": "Theoretische Informatik und Logik UE",
+            "slot": 5
         }
     ]
 }

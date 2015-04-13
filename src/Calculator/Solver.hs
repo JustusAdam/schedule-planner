@@ -75,7 +75,7 @@ formatSchedule hours =
       printf "%10v" $ maybe [] subject (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
-    formatDay (i, l) = intercalate " | " [formatLesson (i, j) | j <- l]
+    formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
 
     header = printf "Total Weight: %10v" (totalWeight hours)
 

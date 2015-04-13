@@ -33,6 +33,13 @@ def splitter(s, a, b):
                 yield s2
 
 
+def inf_range(start):
+    n = start
+    while True:
+        yield n
+        n += 1
+
+
 def extract_data(string, semester):
 
     regex1 = grab_table_regex(semester)
@@ -55,12 +62,20 @@ def extract_data(string, semester):
                 nmatch = br_regex.match(a[0])
             name = nmatch.group(1)
 
+            vl_numbers = inf_range(1)
+
             s = apply_each(lambda b: list(splitter(b, '<br />', '<br/>')), a[6:9])
 
             for kind, day, slot in zip(*s):
                 if kind == "U":
                     yield dict(
-                        subject=name,
+                        subject=name + " UE",
+                        day=days[day.replace(' ', '')],
+                        slot=int(slot.replace('.', '').replace(' ', ''))
+                    )
+                elif kind == "V":
+                    yield dict(
+                        subject=name + " VL{}".format(next(vl_numbers)),
                         day=days[day.replace(' ', '')],
                         slot=int(slot.replace('.', '').replace(' ', ''))
                     )

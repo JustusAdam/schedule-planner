@@ -133,9 +133,9 @@ reportAndExecute (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
 
-  putStrLn "\n"
-  _       <- mapM print lessons
-  putStrLn "\n"
+  -- putStrLn "\n"
+  -- _       <- mapM print lessons
+  -- putStrLn "\n"
 
   putStrLn "\n"
   _       <- mapM print rules
@@ -151,6 +151,7 @@ reportAndExecute (Ok (r, l))  = do
 
   _       <- pc calculated
   return ()
+
   where
     pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
 
