@@ -44,6 +44,7 @@ lessonDayKey  = "day"
 lessonSlotKey = "slot"
 
 
+-- |Legacy test data
 testLessons   = [
         Lesson 1 1 2 "TGI",
         Lesson 1 1 2 "FS",
