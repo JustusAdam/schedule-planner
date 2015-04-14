@@ -77,7 +77,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf ("%" ++ (show cellWidth) ++"v") $ maybe [] ((take cellWidth).subject) (Map.lookup i hours)
+      printf ("%" ++ show cellWidth ++"v") $ maybe [] (take cellWidth.subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]

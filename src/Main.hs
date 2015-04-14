@@ -13,10 +13,10 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
-import qualified Data.List as List
-import qualified Data.Map as Map
 import           Calculator.Scale
 import           Calculator.Solver
+import qualified Data.List          as List
+import qualified Data.Map           as Map
 import           System.Environment
 import           System.IO
 import           Text.JSON          as JSON
@@ -165,7 +165,8 @@ reportAndExecute (Ok (r, l))  = do
   let calculated  = calcFromMap mappedLessons
 
   putStrLn "Legend:"
-  _       <- mapM print $ map (\x -> (List.take 10 x, x)) (Map.keys mappedLessons)
+  _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
+
 
   putStrLn "\n"
   _       <- pc calculated
