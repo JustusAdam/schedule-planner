@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-|
 Module      : $Header$
 Description : Calculate schedules
@@ -29,6 +30,8 @@ import qualified Data.Map    as Map (Map, empty, foldl, fromList, fromListWith,
                                      insert, lookup, map, null, toList)
 import qualified Data.Ord    as Ord (comparing)
 import           Text.Printf (printf)
+import Data.Typeable
+import Data.Data
 
 
 -- |How many days a week has
@@ -45,7 +48,7 @@ data Lesson = Lesson {
   day      :: Int,
   weight   :: Int,
   subject  :: String
-} deriving (Show, Eq, Ord)
+} deriving (Show, Eq, Ord, Typeable, Data)
 
 
 -- |type Alias for readability

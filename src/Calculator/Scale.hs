@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-|
 Module      : $Header$
 Description : Apply weighing rules to lessons
@@ -19,12 +20,14 @@ module Calculator.Scale (
 import           Calculator.Solver
 import           Data.List         as List
 import qualified Data.Map          as Map
+import Data.Typeable
+import Data.Data
 
 
 -- |The scope and target a 'Rule' whishes to influence
-data Target = Slot Int | Day Int | Cell Int Int deriving (Show)
+data Target = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data)
 -- |Weight increase by 'severity' for all 'Lesson's in target
-data Rule   = Rule {target::Target, severity::Int} deriving (Show)
+data Rule   = Rule {target::Target, severity::Int} deriving (Show, Typeable, Data)
 
 
 -- |type alias for more expressive function signature

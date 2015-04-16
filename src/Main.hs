@@ -20,6 +20,11 @@ import qualified Data.Map           as Map
 import           System.Environment
 import           System.IO
 import           Text.JSON          as JSON
+import Control.Monad
+
+
+debugMode = True
+outputFormat = "json"
 
 
 -- |Legacy hard coded name of inputfile
@@ -68,6 +73,11 @@ getFromFile filename = do
   return $ decodeStrict string
 
 
+writeToFile :: String -> JSValue -> IO()
+writeToFile filename v =
+  writeFile filename $ JSON.encode v
+
+
 -- |Turns parsed json values into the internally used datastructures.
 toNative :: Result JSValue -> Result ([Result Rule], [Result Lesson])
 toNative i = do
@@ -85,6 +95,19 @@ toNative i = do
 
       return (rules, lessons)
     inner _             = Error "wrong value type"
+
+
+fromNative :: [MappedSchedule] -> JSValue
+fromNative m = JSArray (liftM (JSArray . convert) m)
+  where
+    convert :: MappedSchedule -> [JSValue]
+    convert e = do
+      ((i,j),b) <- Map.assocs e
+      return $ JSObject (JSON.toJSObject [
+                          ("day", showJSON i),
+                          ("slot", showJSON j),
+                          ("subject", showJSON (subject b))
+                          ])
 
 
 -- |Turns a parsed json value into a 'List' of 'Rule's or return an 'Error'
@@ -117,6 +140,14 @@ extractRules (JSArray rv)  =
 extractRules _             = Error "key lessons does not contain array"
 
 
+printDebug :: Show a => a -> IO()
+printDebug o =
+  if debugMode then
+    print o
+  else
+    return ()
+
+
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
 extractLessons :: JSValue -> Result [Result Lesson]
 extractLessons (JSArray a)  =
@@ -146,10 +177,6 @@ reportAndExecute (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
 
-  -- putStrLn "\n"
-  -- _       <- mapM print lessons
-  -- putStrLn "\n"
-
   putStrLn "\n"
   _       <- mapM print rules
   putStrLn "\n"
@@ -164,13 +191,21 @@ reportAndExecute (Ok (r, l))  = do
 
   let calculated  = calcFromMap mappedLessons
 
-  putStrLn "Legend:"
-  _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
+  case outputFormat of
+
+    "print" -> do
+      putStrLn "Legend:"
+      _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
 
 
-  putStrLn "\n"
-  _       <- pc calculated
-  return ()
+      putStrLn "\n"
+      _       <- pc calculated
+      return ()
+
+    "json" -> do
+      print $ JSON.encode (fromNative calculated)
+      return ()
+
 
   where
     pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
