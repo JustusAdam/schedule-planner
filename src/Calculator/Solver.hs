@@ -118,7 +118,7 @@ calcFromList = calcFromMap.mapToSubject
 calcFromMap :: Map.Map String [Lesson] -> [MappedSchedule]
 calcFromMap mappedLessons
   | Map.null mappedLessons = []
-  | otherwise = calcStep x lists Map.empty minList
+  | otherwise = calc' x lists Map.empty minList
   where
     sortedLessons                 = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (minListPrimer, listsValues)  = unzip $ map (\(t, x : xs) -> (x, (t, xs))) $ Map.toList sortedLessons
@@ -130,8 +130,8 @@ calcFromMap mappedLessons
   Helper function for 'calc'
   represents a recusively called and forking calculation step
 -}
-calcStep :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
-calcStep x lists hourMap minList =
+calc' :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
+calc' x lists hourMap minList =
   case Map.lookup (time x) hourMap of
 
     Nothing   ->
@@ -140,7 +140,7 @@ calcStep x lists hourMap minList =
           [newMap]
         else
           let (c : cs) = minList in
-            calcStep c lists newMap cs
+            calc' c lists newMap cs
 
     Just old  ->
       let
@@ -157,6 +157,6 @@ calcStep x lists hourMap minList =
       case Map.lookup s lists of
         Nothing       -> noResult
         Just []       -> noResult
-        Just (c : cs) -> calcStep c (Map.insert s cs lists)
+        Just (c : cs) -> calc' c (Map.insert s cs lists)
         where
           noResult y x = []

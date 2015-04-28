@@ -24,7 +24,7 @@ import Control.Monad
 
 
 debugMode = True
-outputFormat = "json"
+outputFormat = "print"
 
 
 -- |Legacy hard coded name of inputfile
@@ -142,10 +142,7 @@ extractRules _             = Error "key lessons does not contain array"
 
 printDebug :: Show a => a -> IO()
 printDebug o =
-  if debugMode then
-    print o
-  else
-    return ()
+  when debugMode $ print o
 
 
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
@@ -170,9 +167,8 @@ extractLessons _            = Error "wrong value type"
   and then runs the algorithm or, if the errors are too severe, abourts.
 -}
 reportAndExecute :: Result ([Result Rule], [Result Lesson]) -> IO()
-reportAndExecute (Error s)    = do
-  putErrorLine "Stopped execution due to a severe problem with the input data:"
-  putErrorLine s
+reportAndExecute (Error s)    =
+  putErrorLine $ "Stopped execution due to a severe problem with the input data:" ++ show s
 reportAndExecute (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
@@ -181,15 +177,15 @@ reportAndExecute (Ok (r, l))  = do
   _       <- mapM print rules
   putStrLn "\n"
 
-  let weighted    = weigh rules lessons
+  let weighted      = weigh rules lessons
 
   putStrLn "\n"
-  _         <- mapM print weighted
+  _       <- mapM print weighted
   putStrLn "\n"
 
   let mappedLessons = mapToSubject weighted
 
-  let calculated  = calcFromMap mappedLessons
+  let calculated    = calcFromMap mappedLessons
 
   case outputFormat of
 
@@ -226,7 +222,7 @@ reportAndExecute (Ok (r, l))  = do
 
 {-|
   main function. Handles reading command line arguments, the json input
-  and starting execution.
+  and starts execution.
 -}
 main :: IO()
 main = do
