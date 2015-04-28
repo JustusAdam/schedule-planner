@@ -15,12 +15,13 @@ module Main where
 
 import           Calculator.Scale
 import           Calculator.Solver
+import           Control.Monad
 import qualified Data.List          as List
 import qualified Data.Map           as Map
 import           System.Environment
 import           System.IO
 import           Text.JSON          as JSON
-import Control.Monad
+import Data.Maybe (fromMaybe)
 
 
 debugMode = True
@@ -173,34 +174,40 @@ reportAndExecute (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
 
-  putStrLn "\n"
-  _       <- mapM print rules
-  putStrLn "\n"
-
   let weighted      = weigh rules lessons
-
-  putStrLn "\n"
-  _       <- mapM print weighted
-  putStrLn "\n"
 
   let mappedLessons = mapToSubject weighted
 
-  let calculated    = calcFromMap mappedLessons
+  let result    = calcFromMap mappedLessons
 
-  case outputFormat of
+  case result of
+    Nothing ->
+      putStrLn "Calculation failed, no valid schedule possible"
+    Just(calculated) ->
 
-    "print" -> do
-      putStrLn "Legend:"
-      _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
+      case outputFormat of
+
+        "print" -> do
+
+          putStrLn "\n"
+          _       <- mapM print rules
+          putStrLn "\n"
+
+          putStrLn "\n"
+          _       <- mapM print weighted
+          putStrLn "\n"
+
+          putStrLn "Legend:"
+          _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
 
 
-      putStrLn "\n"
-      _       <- pc calculated
-      return ()
+          putStrLn "\n"
+          _       <- pc calculated
+          return ()
 
-    "json" -> do
-      print $ JSON.encode (fromNative calculated)
-      return ()
+        "json" -> do
+          print $ JSON.encode (fromNative calculated)
+          return ()
 
 
   where

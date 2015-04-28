@@ -29,7 +29,7 @@ import           Data.Data
 import           Data.List     as List (intercalate, sortBy, take)
 import qualified Data.Map      as Map (Map, empty, foldl, fromList,
                                        fromListWith, insert, lookup, map, null,
-                                       toList)
+                                       toList, keys)
 import qualified Data.Ord      as Ord (comparing)
 import           Data.Typeable
 import           Text.Printf   (printf)
@@ -98,14 +98,14 @@ totalWeight m = Map.foldl (+) 0 $ Map.map weight m
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: [Lesson] -> Map.Map String [Lesson]
-mapToSubject [] = Map.empty
-mapToSubject lessons = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
+mapToSubject []       = Map.empty
+mapToSubject lessons  = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
 
 
 {-|
   Same as 'calcFromMap' but operates on a List of 'Lesson's
 -}
-calcFromList :: [Lesson] -> [MappedSchedule]
+calcFromList :: [Lesson] -> Maybe [MappedSchedule]
 calcFromList = calcFromMap.mapToSubject
 
 
@@ -116,48 +116,46 @@ calcFromList = calcFromMap.mapToSubject
   of lightest schedules by branching the evaluation at avery point
   where there is a timeslot collision
 -}
-calcFromMap :: Map.Map String [Lesson] -> [MappedSchedule]
+calcFromMap :: Map.Map String [Lesson] -> Maybe [MappedSchedule]
 calcFromMap mappedLessons
-  | Map.null mappedLessons = []
-  | otherwise = calc' x lists Map.empty minList
+  | Map.null mappedLessons  = Nothing
+  | otherwise               = do
+    (x : xs) <- Map.lookup subjX sortedLessons
+    calc' x sortedLessons Map.empty minList
   where
-    sortedLessons                 = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
-    (minListPrimer, listsValues)  = unzip $ map (\(t, x : xs) -> (x, (t, xs))) $ Map.toList sortedLessons
-    lists                         = Map.fromList listsValues
-    (x : minList)                 = List.sortBy (Ord.comparing weight) minListPrimer
+    sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
+    (subjX : minList)   = Map.keys sortedLessons
 
 
 {-|
   Helper function for 'calc'
   represents a recusively called and forking calculation step
 -}
-calc' :: Lesson -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
+calc' :: Lesson -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]
 calc' x lists hourMap minList =
   case Map.lookup (time x) hourMap of
 
     Nothing   ->
       if null minList
         then
-          [newMap]
+          return [newMap]
         else
-          let (c : cs) = minList in
-            calc' c lists newMap cs
+          let (c : cs) = minList in do
+            (l:_) <- Map.lookup c lists
+            calc' l lists newMap cs
 
-    Just old  ->
-      let
-        r1 = reduceLists (subject x) lists hourMap minList
-        r2 = reduceLists (subject old) lists newMap minList
-      in
-      r1 ++ r2
+    Just old  -> do
+
+      r1 <- reduceLists (subject x) lists hourMap minList
+      r2 <- reduceLists (subject old) lists newMap minList
+      return $ r1 ++ r2
 
   where
     newMap = Map.insert (time x) x hourMap
 
-    reduceLists :: String -> MappedLessons -> MappedSchedule -> [Lesson] -> [MappedSchedule]
-    reduceLists s lists =
-      case Map.lookup s lists of
-        Nothing       -> noResult
-        Just []       -> noResult
-        Just (c : cs) -> calc' c (Map.insert s cs lists)
-        where
-          noResult y x = []
+    reduceLists :: String -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]
+    reduceLists s lists schedules subjects = do
+      l <- Map.lookup s lists
+      case l of
+        []        -> Nothing
+        (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
