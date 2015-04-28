@@ -18,22 +18,18 @@ module Calculator.Scale (
 ) where
 
 import           Calculator.Solver
+import           Data.Data
 import           Data.List         as List
 import qualified Data.Map          as Map
-import Data.Typeable
-import Data.Data
+import           Data.Typeable
 
 
 -- |The scope and target a 'Rule' whishes to influence
-data Target   = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data)
+data Target         = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data)
 -- |Weight increase by 'severity' for all 'Lesson's in target
-data Rule     = Rule {target::Target, severity::Int} deriving (Show, Typeable, Data)
+data Rule           = Rule {target :: Target, severity :: Int} deriving (Show, Typeable, Data)
 
-data DayRule  = DayRule {dayRuleDay :: Int, dayRuleSeverity::Int}
-
-data SlotRule = SlotRule {slotRuleSlot :: Int, slotRuleSeverity :: Int}
-
-data CellRule = CellRule {cellRuleDay :: Int, cellRuleSlot :: Int, cellRuleSeverity :: Int}
+data SimpleDynRule  = SimpleDynRule {sDynTarget :: Target, sDynSeverity :: Int} deriving (Show)
 
 
 -- |type alias for more expressive function signature
@@ -45,42 +41,39 @@ type CellWeighMap   = Map.Map (Int, Int) Int
 -- |type alias for more expressive function signature
 type WeightMapTuple = (SlotWeightMap, DayWeightMap, CellWeighMap)
 
-type DynRuleTuple   = (Map.Map Int [DayRule], Map.Map Int [SlotRule], Map.Map (Int, Int) [CellRule])
+type DynRuleTuple   = (Map.Map Int [SimpleDynRule],
+                       Map.Map Int [SimpleDynRule],
+                       Map.Map (Int, Int) [SimpleDynRule])
 
 
 class DynamicRule a where
-    trigger          :: Lesson -> WeightMapTuple -> a -> (WeightMapTuple, a)
-    getTriggerTarget :: a -> [Target]
-
-instance DynamicRule DayRule where
-    trigger inserted (ms, md, mc) rule =
-        ((ms, newMd, mc), rule)
-        where
-            newMd = Map.insertWith (+) (dayRuleDay rule) (dayRuleSeverity rule) md
-    getTriggerTarget rule = [Day (dayRuleDay rule)]
-
-instance DynamicRule SlotRule where
-    trigger inserted (ms, md, mc) rule =
-        ((newMs, md, mc), rule)
-        where
-            newMs = Map.insertWith (+) (slotRuleSlot rule) (slotRuleSeverity rule) ms
-    getTriggerTarget rule = [Slot (slotRuleSlot rule)]
-
-instance DynamicRule CellRule where
-    trigger inserted (ms, md, mc) rule =
-        ((ms, md, newMc), rule)
-        where
-            newMc = Map.insertWith (+) (cellRuleDay rule, cellRuleSlot rule) (cellRuleSeverity rule) mc
-    getTriggerTarget rule = [Cell (cellRuleDay rule) (cellRuleSlot rule)]
+  trigger          :: Lesson -> WeightMapTuple -> a -> (WeightMapTuple, a)
+  getTriggerTarget :: a -> [Target]
 
 
-reweight :: WeightMapTuple -> Lesson -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
-reweight wmt l (rs, rd, rc) =
-    ((rs, rd, rc), fst $ reweight' l (fst $ reweight' l (fst $ reweight' l wmt ls) ld) lc)
+instance DynamicRule SimpleDynRule where
+  trigger inserted (ms, md, mc) (SimpleDynRule target sev) =
+    case target of
+      Slot slot   ->  ((ms, Map.insertWith (+) slot sev md, mc), rule)
+      Day  day    ->  ((Map.insertWith (+) day sev ms, md, mc), rule)
+      Cell c1 c2  ->  ((ms, md, Map.insertWith (+) (c1, c2) sev mc), rule)
     where
-        ls = Map.findWithDefault [] (timeslot l) rs
-        ld = Map.findWithDefault [] (day l) rd
-        lc = Map.findWithDefault [] (day l, timeslot l) rc
+      rule = SimpleDynRule target sev
+
+  getTriggerTarget (SimpleDynRule {sDynTarget = x}) = [x]
+  
+
+reCalcMaps :: WeightMapTuple -> Lesson -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
+reCalcMaps wmt l (rs, rd, rc) =
+  ((rs, rd, rc), fst $ reCalcMaps' l (fst $ reCalcMaps' l (fst $ reCalcMaps' l wmt ls) ld) lc)
+  where
+    ls = Map.findWithDefault [] (timeslot l) rs
+    ld = Map.findWithDefault [] (day l) rd
+    lc = Map.findWithDefault [] (day l, timeslot l) rc
+
+
+reCalcMaps' :: DynamicRule a => Lesson ->  WeightMapTuple -> [a] -> (WeightMapTuple, [a])
+reCalcMaps' inserted = mapAccumL (trigger inserted)
 
 
 applyToFirst :: (a -> c) -> (a, b) -> (c, b)
@@ -89,10 +82,6 @@ applyToFirst f (x, y) = (f x, y)
 
 applyToSecond :: (b -> c) -> (a, b) -> (a, c)
 applyToSecond f (x, y) = (x, f y)
-
-
-reweight' :: DynamicRule a => Lesson ->  WeightMapTuple -> [a] -> (WeightMapTuple, [a])
-reweight' inserted = mapAccumL (trigger inserted)
 
 
 {-|

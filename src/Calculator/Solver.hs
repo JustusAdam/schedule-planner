@@ -25,13 +25,14 @@ module Calculator.Solver (
   MappedLessons
   ) where
 
-import           Data.List   as List (intercalate, sortBy, take)
-import qualified Data.Map    as Map (Map, empty, foldl, fromList, fromListWith,
-                                     insert, lookup, map, null, toList)
-import qualified Data.Ord    as Ord (comparing)
-import           Text.Printf (printf)
-import Data.Typeable
-import Data.Data
+import           Data.Data
+import           Data.List     as List (intercalate, sortBy, take)
+import qualified Data.Map      as Map (Map, empty, foldl, fromList,
+                                       fromListWith, insert, lookup, map, null,
+                                       toList)
+import qualified Data.Ord      as Ord (comparing)
+import           Data.Typeable
+import           Text.Printf   (printf)
 
 
 -- |How many days a week has
@@ -80,7 +81,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf ("%" ++ show cellWidth ++"v") $ maybe [] (take cellWidth.subject) (Map.lookup i hours)
+      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (take cellWidth.subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
