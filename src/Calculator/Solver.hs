@@ -28,8 +28,9 @@ module Calculator.Solver (
 import           Data.Data
 import           Data.List     as List (intercalate, sortBy, take)
 import qualified Data.Map      as Map (Map, empty, foldl, fromList,
-                                       fromListWith, insert, lookup, map, null,
-                                       toList, keys)
+                                       fromListWith, insert, keys, lookup, map,
+                                       null, toList)
+import           Data.Maybe    (fromMaybe)
 import qualified Data.Ord      as Ord (comparing)
 import           Data.Typeable
 import           Text.Printf   (printf)
@@ -81,7 +82,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (take cellWidth.subject) (Map.lookup i hours)
+      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (reverse.take cellWidth.reverse.subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
@@ -144,11 +145,11 @@ calc' x lists hourMap minList =
             (l:_) <- Map.lookup c lists
             calc' l lists newMap cs
 
-    Just old  -> do
-
-      r1 <- reduceLists (subject x) lists hourMap minList
-      r2 <- reduceLists (subject old) lists newMap minList
+    Just old  ->
       return $ r1 ++ r2
+      where
+        r1 = fromMaybe [] $ reduceLists (subject x) lists hourMap minList
+        r2 = fromMaybe [] $ reduceLists (subject old) lists newMap minList
 
   where
     newMap = Map.insert (time x) x hourMap

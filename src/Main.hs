@@ -183,7 +183,7 @@ reportAndExecute (Ok (r, l))  = do
 
   let mappedLessons = mapToSubject weighted
 
-  let result    = calcFromMap mappedLessons
+  let result        = calcFromMap mappedLessons
 
   case result of
     Nothing ->
