@@ -22,12 +22,14 @@ import           Data.Maybe         (fromMaybe)
 import           System.Environment
 import           System.IO
 import           Text.JSON          as JSON
+import Control.Applicative
+import Options
 
 
 -- |Enables debug messages
 debugMode = True
 -- |Temporary constant, should be in call args eventually
-outputFormat = "print"
+outputFormatDefault = "print"
 
 
 -- |Legacy hard coded name of inputfile
@@ -50,6 +52,29 @@ subjectKey    = "subject"
 lessonDayKey  = "day"
 -- |Key for the slot property in Rule objects in the json input
 lessonSlotKey = "slot"
+
+
+data CallOptions = CallOptions {
+    outputFile    :: Maybe String,
+    inputFile     :: String,
+    outputFormat  :: String
+  } deriving (Show)
+
+instance Options CallOptions where
+  defineOptions = pure CallOptions
+    <*> defineOption (optionType_maybe optionType_string) (\o -> o {
+        optionLongFlags   = ["output-file"],
+        optionShortFlags  = ['o'],
+        optionDescription = "print output to this file instead of stdout",
+        optionDefault     = Nothing
+      })
+    <*> defineOption optionType_string (\o2 -> o2 {
+        optionDefault     = stdFileName,
+        optionLongFlags   = ["input-file"],
+        optionShortFlags  = ['i'],
+        optionDescription = "read input from this file"
+      })
+    <*> simpleOption "output-format" outputFormatDefault "set the output format"
 
 
 -- |Legacy test data
@@ -190,7 +215,7 @@ reportAndExecute (Ok (r, l))  = do
       putStrLn "Calculation failed, no valid schedule possible"
     Just calculated ->
 
-      case outputFormat of
+      case outputFormatDefault of
 
         "print" -> do
 
@@ -237,9 +262,7 @@ reportAndExecute (Ok (r, l))  = do
   and starts execution.
 -}
 main :: IO()
-main = do
-  args <- getArgs
-  let filename = head args
-  json <- getFromFile filename
-  let native = toNative json
-  reportAndExecute native
+main = runCommand $ \opts args -> do
+  print opts
+  putStrLn (foldl (++) "" args)
+  print (outputFormat opts)

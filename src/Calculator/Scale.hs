@@ -67,11 +67,19 @@ instance DynamicRule SimpleDynRule where
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
 reCalcMaps :: WeightMapTuple -> Lesson -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
 reCalcMaps wmt l (rs, rd, rc) =
-  ((rs, rd, rc), fst $ reCalcMaps' l (fst $ reCalcMaps' l (fst $ reCalcMaps' l wmt ls) ld) lc)
+  ((rsn, rdn, rcn), weightTuple3)
   where
     ls = Map.findWithDefault [] (timeslot l) rs
     ld = Map.findWithDefault [] (day l) rd
     lc = Map.findWithDefault [] (day l, timeslot l) rc
+
+    (weightTuple1, updatedSR) = reCalcMaps' l wmt ls
+    (weightTuple2, updatedDR) = reCalcMaps' l weightTuple1 ld
+    (weightTuple3, updatedCR) = reCalcMaps' l weightTuple2 lc
+
+    rsn = Map.insert (timeslot l) updatedSR rs
+    rdn = Map.insert (day l) updatedDR rd
+    rcn = Map.insert (day l, timeslot l) updatedCR rc
 
 
 -- |Helper function for reCalcMaps
