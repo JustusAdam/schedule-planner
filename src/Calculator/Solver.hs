@@ -122,7 +122,7 @@ calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
   | otherwise               = do
     (x : xs) <- Map.lookup subjX sortedLessons
-    calc' x sortedLessons Map.empty minList
+    calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
   where
     sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList)   = Map.keys sortedLessons
@@ -137,19 +137,17 @@ calc' x lists hourMap minList =
   case Map.lookup (time x) hourMap of
 
     Nothing   ->
-      if null minList
-        then
-          return [newMap]
-        else
-          let (c : cs) = minList in do
-            (l:_) <- Map.lookup c lists
-            calc' l lists newMap cs
+      case minList of
+        []        -> return [newMap]
+        (c : cs)  -> do
+          (l : ls) <- Map.lookup c lists
+          calc' l (Map.insert c ls lists) newMap cs
 
     Just old  ->
       return $ r1 ++ r2
       where
-        r1 = fromMaybe [] $ reduceLists (subject x) lists hourMap minList
-        r2 = fromMaybe [] $ reduceLists (subject old) lists newMap minList
+        r1 = fromMaybe [] $ reduceLists (subject x)   lists hourMap minList
+        r2 = fromMaybe [] $ reduceLists (subject old) lists newMap  minList
 
   where
     newMap = Map.insert (time x) x hourMap
