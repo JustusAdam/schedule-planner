@@ -18,13 +18,15 @@ import           Calculator.Solver
 import           Control.Monad
 import qualified Data.List          as List
 import qualified Data.Map           as Map
+import           Data.Maybe         (fromMaybe)
 import           System.Environment
 import           System.IO
 import           Text.JSON          as JSON
-import Data.Maybe (fromMaybe)
 
 
+-- |Enables debug messages
 debugMode = True
+-- |Temporary constant, should be in call args eventually
 outputFormat = "print"
 
 
@@ -74,6 +76,7 @@ getFromFile filename = do
   return $ decodeStrict string
 
 
+-- |Open a file and write json to it
 writeToFile :: String -> JSValue -> IO()
 writeToFile filename v =
   writeFile filename $ JSON.encode v
@@ -98,6 +101,7 @@ toNative i = do
     inner _             = Error "wrong value type"
 
 
+-- |Transform Native the native schedules into JSON
 fromNative :: [MappedSchedule] -> JSValue
 fromNative m = JSArray (liftM (JSArray . convert) m)
   where
@@ -141,6 +145,7 @@ extractRules (JSArray rv)  =
 extractRules _             = Error "key lessons does not contain array"
 
 
+-- |Print a string if debug is enabled
 printDebug :: Show a => a -> IO()
 printDebug o =
   when debugMode $ print o
@@ -183,7 +188,7 @@ reportAndExecute (Ok (r, l))  = do
   case result of
     Nothing ->
       putStrLn "Calculation failed, no valid schedule possible"
-    Just(calculated) ->
+    Just calculated ->
 
       case outputFormat of
 

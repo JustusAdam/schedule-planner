@@ -94,7 +94,7 @@ totalWeight :: MappedSchedule -> Int
 totalWeight m = Map.foldl (+) 0 $ Map.map weight m
 
 
-{-
+{-|
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: [Lesson] -> Map.Map String [Lesson]
@@ -110,7 +110,7 @@ calcFromList = calcFromMap.mapToSubject
 
 
 
-{-
+{-|
   Main evaluation function
   Transforms a map of weighted 'Lesson's of a particular subject into a list
   of lightest schedules by branching the evaluation at avery point
@@ -128,7 +128,7 @@ calcFromMap mappedLessons
 
 
 {-|
-  Helper function for 'calc'
+  Helper function for 'calcFromMap'
   represents a recusively called and forking calculation step
 -}
 calc' :: Lesson -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]

@@ -28,24 +28,25 @@ import           Data.Typeable
 data Target         = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data)
 -- |Weight increase by 'severity' for all 'Lesson's in target
 data Rule           = Rule {target :: Target, severity :: Int} deriving (Show, Typeable, Data)
-
+-- |Dynamic rule with only one condition
 data SimpleDynRule  = SimpleDynRule {sDynTarget :: Target, sDynSeverity :: Int} deriving (Show)
 
 
--- |type alias for more expressive function signature
+-- |Type alias for more expressive function signature
 type DayWeightMap   = Map.Map Int Int
--- |type alias for more expressive function signature
+-- |Type alias for more expressive function signature
 type SlotWeightMap  = Map.Map Int Int
--- |type alias for more expressive function signature
+-- |Type alias for more expressive function signature
 type CellWeighMap   = Map.Map (Int, Int) Int
--- |type alias for more expressive function signature
+-- |Type alias for more expressive function signature
 type WeightMapTuple = (SlotWeightMap, DayWeightMap, CellWeighMap)
-
+-- |Type alias for structure holding the dynamic rules
 type DynRuleTuple   = (Map.Map Int [SimpleDynRule],
                        Map.Map Int [SimpleDynRule],
                        Map.Map (Int, Int) [SimpleDynRule])
 
 
+-- |Scaffolding of a dynamic rule
 class DynamicRule a where
   trigger          :: Lesson -> WeightMapTuple -> a -> (WeightMapTuple, a)
   getTriggerTarget :: a -> [Target]
@@ -61,8 +62,9 @@ instance DynamicRule SimpleDynRule where
       rule = SimpleDynRule target sev
 
   getTriggerTarget (SimpleDynRule {sDynTarget = x}) = [x]
-  
 
+
+-- |Recalculate the lesson weight tuple as a result of dynamic rules
 reCalcMaps :: WeightMapTuple -> Lesson -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
 reCalcMaps wmt l (rs, rd, rc) =
   ((rs, rd, rc), fst $ reCalcMaps' l (fst $ reCalcMaps' l (fst $ reCalcMaps' l wmt ls) ld) lc)
@@ -72,14 +74,17 @@ reCalcMaps wmt l (rs, rd, rc) =
     lc = Map.findWithDefault [] (day l, timeslot l) rc
 
 
+-- |Helper function for reCalcMaps
 reCalcMaps' :: DynamicRule a => Lesson ->  WeightMapTuple -> [a] -> (WeightMapTuple, [a])
 reCalcMaps' inserted = mapAccumL (trigger inserted)
 
 
+-- |Apply a function to only the first element of a 2-tuple
 applyToFirst :: (a -> c) -> (a, b) -> (c, b)
 applyToFirst f (x, y) = (f x, y)
 
 
+-- |Apply a function to only the second element of a 2-tuple
 applyToSecond :: (b -> c) -> (a, b) -> (a, c)
 applyToSecond f (x, y) = (x, f y)
 
