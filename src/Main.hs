@@ -13,17 +13,22 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
-import           Calculator.Scale
-import           Calculator.Solver
-import           Control.Applicative
-import           Control.Monad
-import qualified Data.List           as List
-import qualified Data.Map            as Map
+import Calculator
+import           Control.Applicative ((<*>), pure)
+import           Control.Monad       (liftM, when)
+import qualified Data.List           as List (take)
+import qualified Data.Map            as Map (insert, assocs, keys)
 import           Data.Maybe          (fromMaybe)
-import           Options
-import           System.Environment
-import           System.IO
-import           Text.JSON           as JSON
+import           Options             (Options, runCommand, optionLongFlags,
+                                      optionShortFlags, optionType_maybe,
+                                      optionType_string, optionDefault,
+                                      optionDescription, defineOption,
+                                      defineOptions)
+import           System.IO           (hPutStrLn, stderr)
+import           Text.JSON           as JSON (JSValue(JSArray, JSObject),
+                                              encode, Result(..), valFromObj,
+                                              showJSON, JSObject, toJSObject,
+                                              JSON, decodeStrict)
 
 
 -- |Enables debug messages
@@ -126,7 +131,7 @@ toNative (Error e)          = Error e
 
 -- |Transform Native the native schedules into JSON
 fromNative :: [MappedSchedule] -> JSValue
-fromNative = JSArray . liftM convert
+fromNative = JSArray . map convert
   where
     convert :: MappedSchedule -> JSValue
     convert = pure (\a b -> JSObject (JSON.toJSObject [a,b]))
@@ -230,7 +235,7 @@ reportAndExecute outputFormat (Ok (r, l))  = do
           putStrLn "\n"
 
           putStrLn "Legend:"
-          _       <- mapM (print . (\ x -> (List.take 10 x, x))) (Map.keys mappedLessons)
+          _       <- mapM (print . (pure (,) <*> (List.take 10) <*> id) ) (Map.keys mappedLessons)
 
 
           putStrLn "\n"
@@ -243,7 +248,7 @@ reportAndExecute outputFormat (Ok (r, l))  = do
 
 
   where
-    pc = mapM (\x -> putStrLn ("\n\n" ++ formatSchedule x))
+    pc = mapM (putStrLn.("\n\n" ++).formatSchedule)
 
     reportOrReturn :: [Result a] -> IO [a]
     reportOrReturn []     =
@@ -254,9 +259,7 @@ reportAndExecute outputFormat (Ok (r, l))  = do
           putErrorLine "Some data was unusable:"
           putErrorLine s
           reportOrReturn xs
-        Ok v    -> do
-          ps <- reportOrReturn xs
-          return (v:ps)
+        Ok v    -> liftM (v:) (reportOrReturn xs)
 
 
 {-|

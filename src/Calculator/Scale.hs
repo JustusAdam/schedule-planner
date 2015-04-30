@@ -17,12 +17,12 @@ module Calculator.Scale (
   calcMaps
 ) where
 
-import           Calculator.Solver
-import           Control.Monad
-import           Data.Data
-import           Data.List         as List
-import qualified Data.Map          as Map
-import           Data.Typeable
+import           Calculator.Solver (timeslot, Lesson(..), time)
+import           Data.Data         (Data)
+import           Data.List         as List (mapAccumL)
+import qualified Data.Map          as Map (empty, Map, findWithDefault,
+                                           insertWith, insert)
+import           Data.Typeable     (Typeable)
 
 
 -- |The scope and target a 'Rule' whishes to influence
@@ -108,7 +108,7 @@ applyToSecond f (x, y) = (x, f y)
   component which is the old weight + the weight calculated from the rules
 -}
 weigh :: [Rule] -> [Lesson] -> [Lesson]
-weigh rs = liftM (weighOne (calcMaps rs))
+weigh rs = map (weighOne (calcMaps rs))
 
 
 {-|
@@ -131,7 +131,7 @@ weighOne (ms, md, mc) l =
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMapTuple
-calcMaps r = calcMapsStep r (Map.empty, Map.empty, Map.empty)
+calcMaps = (`calcMapsStep` (Map.empty, Map.empty, Map.empty))
 
 
 {-|

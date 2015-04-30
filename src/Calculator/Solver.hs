@@ -25,15 +25,15 @@ module Calculator.Solver (
   MappedLessons
   ) where
 
-import           Control.Applicative
-import           Data.Data
+import           Control.Applicative (pure, (<*>))
+import           Data.Data           (Data)
 import           Data.List           as List (intercalate, sortBy, take)
 import qualified Data.Map            as Map (Map, empty, foldl, fromList,
                                              fromListWith, insert, keys, lookup,
                                              map, null, toList)
 import           Data.Maybe          (fromMaybe)
 import qualified Data.Ord            as Ord (comparing)
-import           Data.Typeable
+import           Data.Typeable       (Typeable)
 import           Text.Printf         (printf)
 
 

@@ -11,9 +11,18 @@ Exports the most important functions neccessary for the actual work
 of this software
 -}
 module Calculator(
-  calc,
+  calcFromMap,
+  calcFromList,
   formatSchedule,
   totalWeight,
   Lesson (..),
-  Timeslot (..)
+  Timeslot (..),
+  Target(..),
+  Rule(..),
+  mapToSubject,
+  MappedSchedule,
+  weigh
 ) where
+
+import Calculator.Scale
+import Calculator.Solver
