@@ -25,15 +25,16 @@ module Calculator.Solver (
   MappedLessons
   ) where
 
+import           Control.Applicative
 import           Data.Data
-import           Data.List     as List (intercalate, sortBy, take)
-import qualified Data.Map      as Map (Map, empty, foldl, fromList,
-                                       fromListWith, insert, keys, lookup, map,
-                                       null, toList)
-import           Data.Maybe    (fromMaybe)
-import qualified Data.Ord      as Ord (comparing)
+import           Data.List           as List (intercalate, sortBy, take)
+import qualified Data.Map            as Map (Map, empty, foldl, fromList,
+                                             fromListWith, insert, keys, lookup,
+                                             map, null, toList)
+import           Data.Maybe          (fromMaybe)
+import qualified Data.Ord            as Ord (comparing)
 import           Data.Typeable
-import           Text.Printf   (printf)
+import           Text.Printf         (printf)
 
 
 -- |How many days a week has
@@ -93,14 +94,14 @@ formatSchedule hours =
 
 -- |Convenience function to obtain the total weight of a particular Schedule
 totalWeight :: MappedSchedule -> Int
-totalWeight = (Map.foldl (+) 0).(Map.map weight)
+totalWeight = Map.foldl (+) 0 . Map.map weight
 
 
 {-|
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: [Lesson] -> Map.Map String [Lesson]
-mapToSubject = (Map.fromListWith (++)).(map (\x -> (subject x, [x])))
+mapToSubject = Map.fromListWith (++) . map (\x -> (subject x, [x]))
 
 
 {-|

@@ -64,20 +64,20 @@ instance Options CallOptions where
   defineOptions = pure CallOptions
     <*> defineOption (optionType_maybe optionType_string) (\o -> o {
         optionLongFlags   = ["output-file"],
-        optionShortFlags  = ['o'],
+        optionShortFlags  = "o",
         optionDescription = "print output to this file instead of stdout",
         optionDefault     = Nothing
       })
     <*> defineOption optionType_string (\o -> o {
         optionDefault     = stdFileName,
         optionLongFlags   = ["input-file"],
-        optionShortFlags  = ['i'],
+        optionShortFlags  = "i",
         optionDescription = "read input from this file"
       })
     <*> defineOption optionType_string (\o -> o {
         optionDefault     = outputFormatDefault,
         optionLongFlags   = ["output-format"],
-        optionShortFlags  = ['f'],
+        optionShortFlags  = "f",
         optionDescription = "set the output format"
       })
 
@@ -102,12 +102,12 @@ putErrorLine = hPutStrLn stderr
 -- |Open a file and return the contents as parsed json
 getFromFile :: JSON a => String -> IO(Result a)
 getFromFile filename =
-  readFile filename >>= (return . decodeStrict)
+  liftM decodeStrict (readFile filename)
 
 
 -- |Open a file and write json to it
 writeToFile :: String -> JSValue -> IO()
-writeToFile filename = (writeFile filename).(JSON.encode)
+writeToFile filename = writeFile filename . JSON.encode
 
 
 -- |Turns parsed json values into the internally used datastructures.
@@ -126,20 +126,20 @@ toNative (Error e)          = Error e
 
 -- |Transform Native the native schedules into JSON
 fromNative :: [MappedSchedule] -> JSValue
-fromNative = JSArray.(liftM convert)
+fromNative = JSArray . liftM convert
   where
     convert :: MappedSchedule -> JSValue
     convert = pure (\a b -> JSObject (JSON.toJSObject [a,b]))
-        <*> (((,) "weight") . showJSON . totalWeight)
-        <*> (((,) "values") . JSArray .
-              (map
+        <*> ((,) "weight" . showJSON . totalWeight)
+        <*> ((,) "values" . JSArray .
+              map
                 (\((i, j), b) ->
                   JSObject (JSON.toJSObject [
                             ("day", showJSON i),
                             ("slot", showJSON j),
                             ("subject", showJSON (subject b))
                           ]))
-                ) . (Map.assocs)
+                . Map.assocs
               )
 
 
@@ -175,7 +175,7 @@ extractRules _             = Error "key lessons does not contain array"
 
 -- |Print a string if debug is enabled
 printDebug :: Show a => a -> IO()
-printDebug = (when debugMode) . print
+printDebug = when debugMode . print
 
 
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'

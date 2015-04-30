@@ -18,11 +18,11 @@ module Calculator.Scale (
 ) where
 
 import           Calculator.Solver
+import           Control.Monad
 import           Data.Data
 import           Data.List         as List
 import qualified Data.Map          as Map
 import           Data.Typeable
-import Control.Monad
 
 
 -- |The scope and target a 'Rule' whishes to influence
@@ -119,7 +119,7 @@ weighOne :: WeightMapTuple -> Lesson -> Lesson
 weighOne (ms, md, mc) l =
   l {
       weight =
-        (weight l)
+        weight l
         + Map.findWithDefault 0 (timeslot l) ms
         + Map.findWithDefault 0 (day l) md
         + Map.findWithDefault 0 (time l) mc
