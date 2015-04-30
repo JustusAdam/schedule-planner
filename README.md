@@ -11,9 +11,13 @@ Base algorithm seems to work, will add UI soon.
 
 ## Usage
 
-You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner filepath.json`
+You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner`
 
-It currently works on raw rule and lesson data provided by the file `filepath.json`. You can find an example of such a file in `testsuite/test.json`.
+By default it tries to obtain it's input data from `testsuite/test.json`, but you can specify any file as input using command line options.
+
+Obtain information about the command line arguments using the `-h` or `--help` argument.
+
+Since this is mostly intended to be used by myself to calculate a schedule and I attend the 'TU Dresden' there's a scraper script in `util/grab.py` that gets all the current lessons as json from the website.
 
 ## Code documentation
 
