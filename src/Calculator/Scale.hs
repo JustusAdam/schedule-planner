@@ -22,6 +22,7 @@ import           Data.Data
 import           Data.List         as List
 import qualified Data.Map          as Map
 import           Data.Typeable
+import Control.Monad
 
 
 -- |The scope and target a 'Rule' whishes to influence
@@ -61,7 +62,7 @@ instance DynamicRule SimpleDynRule where
     where
       rule = SimpleDynRule target sev
 
-  getTriggerTarget (SimpleDynRule {sDynTarget = x}) = [x]
+  getTriggerTarget = return.sDynTarget
 
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
@@ -107,14 +108,7 @@ applyToSecond f (x, y) = (x, f y)
   component which is the old weight + the weight calculated from the rules
 -}
 weigh :: [Rule] -> [Lesson] -> [Lesson]
-weigh [] x  = x
-weigh _ []  = []
-weigh rs ls = do
-  l <- ls
-  return (weighOne maps l)
-
-  where
-    maps = calcMaps rs
+weigh rs = liftM (weighOne (calcMaps rs))
 
 
 {-|
@@ -124,17 +118,12 @@ weigh rs ls = do
 weighOne :: WeightMapTuple -> Lesson -> Lesson
 weighOne (ms, md, mc) l =
   l {
-      weight = oldWeight + slotWeight + dayWeight + cellWeight
+      weight =
+        (weight l)
+        + Map.findWithDefault 0 (timeslot l) ms
+        + Map.findWithDefault 0 (day l) md
+        + Map.findWithDefault 0 (time l) mc
     }
-
-  where
-    getOrZero :: Ord k => k -> Map.Map k Int -> Int
-    getOrZero  = Map.findWithDefault 0
-
-    oldWeight  = weight l
-    dayWeight  = getOrZero (day l) md
-    slotWeight = getOrZero (timeslot l) ms
-    cellWeight = getOrZero (time l) mc
 
 
 {-|
@@ -142,12 +131,7 @@ weighOne (ms, md, mc) l =
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMapTuple
-calcMaps r
-  | List.null r   = allEmpty
-  | otherwise     = calcMapsStep r allEmpty
-
-  where
-    allEmpty = (Map.empty, Map.empty, Map.empty)
+calcMaps r = calcMapsStep r (Map.empty, Map.empty, Map.empty)
 
 
 {-|
@@ -158,10 +142,10 @@ calcMapsStep [] mt                          = mt
 calcMapsStep (Rule t sev :xs) (ms, md, mc)  = calcMapsStep xs newMaps
 
   where
-    increase :: Ord k => k -> Int -> Map.Map k Int -> Map.Map k Int
-    increase = Map.insertWith (+)
+    increase :: Ord k => k -> Map.Map k Int -> Map.Map k Int
+    increase target = Map.insertWith (+) target sev
 
     newMaps = case t of
-                Slot s      -> (increase s sev ms, md, mc)
-                Day d       -> (ms, increase d sev md, mc)
-                Cell c1 c2  -> (ms, md, increase (c1, c2) sev mc)
+                Slot s      -> (increase s ms, md, mc)
+                Day d       -> (ms, increase d md, mc)
+                Cell c1 c2  -> (ms, md, increase (c1, c2) mc)

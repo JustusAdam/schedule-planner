@@ -66,7 +66,8 @@ type MappedSchedule = Map.Map Timeslot Lesson
 
 -- |Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
 time :: Lesson -> Timeslot
-time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
+-- time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
+time = pure (,) <*> day <*> timeslot
 
 
 {-|
@@ -92,15 +93,14 @@ formatSchedule hours =
 
 -- |Convenience function to obtain the total weight of a particular Schedule
 totalWeight :: MappedSchedule -> Int
-totalWeight m = Map.foldl (+) 0 $ Map.map weight m
+totalWeight = (Map.foldl (+) 0).(Map.map weight)
 
 
 {-|
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: [Lesson] -> Map.Map String [Lesson]
-mapToSubject []       = Map.empty
-mapToSubject lessons  = Map.fromListWith (++) $ map (\x -> (subject x, [x])) lessons
+mapToSubject = (Map.fromListWith (++)).(map (\x -> (subject x, [x])))
 
 
 {-|
@@ -120,9 +120,10 @@ calcFromList = calcFromMap.mapToSubject
 calcFromMap :: Map.Map String [Lesson] -> Maybe [MappedSchedule]
 calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
-  | otherwise               = do
-    (x : xs) <- Map.lookup subjX sortedLessons
-    calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
+  | otherwise               = Map.lookup subjX sortedLessons >>=
+    (\(x : xs) ->
+      calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
+      )
   where
     sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList)   = Map.keys sortedLessons
@@ -139,9 +140,8 @@ calc' x lists hourMap minList =
     Nothing   ->
       case minList of
         []        -> return [newMap]
-        (c : cs)  -> do
-          (l : ls) <- Map.lookup c lists
-          calc' l (Map.insert c ls lists) newMap cs
+        (c : cs)  -> Map.lookup c lists >>=
+          (\(l : ls) -> calc' l (Map.insert c ls lists) newMap cs)
 
     Just old  ->
       return $ r1 ++ r2
@@ -153,8 +153,9 @@ calc' x lists hourMap minList =
     newMap = Map.insert (time x) x hourMap
 
     reduceLists :: String -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]
-    reduceLists s lists schedules subjects = do
-      l <- Map.lookup s lists
-      case l of
-        []        -> Nothing
-        (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
+    reduceLists s lists schedules subjects = Map.lookup s lists >>=
+      (\l ->
+        case l of
+          []        -> Nothing
+          (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
+        )

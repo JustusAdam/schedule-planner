@@ -15,15 +15,15 @@ module Main where
 
 import           Calculator.Scale
 import           Calculator.Solver
+import           Control.Applicative
 import           Control.Monad
-import qualified Data.List          as List
-import qualified Data.Map           as Map
-import           Data.Maybe         (fromMaybe)
+import qualified Data.List           as List
+import qualified Data.Map            as Map
+import           Data.Maybe          (fromMaybe)
+import           Options
 import           System.Environment
 import           System.IO
-import           Text.JSON          as JSON
-import Control.Applicative
-import Options
+import           Text.JSON           as JSON
 
 
 -- |Enables debug messages
@@ -55,9 +55,9 @@ lessonSlotKey = "slot"
 
 
 data CallOptions = CallOptions {
-    outputFile    :: Maybe String,
-    inputFile     :: String,
-    outputFormat  :: String
+    outputFile   :: Maybe String,
+    inputFile    :: String,
+    outputFormat :: String
   } deriving (Show)
 
 instance Options CallOptions where
@@ -68,13 +68,18 @@ instance Options CallOptions where
         optionDescription = "print output to this file instead of stdout",
         optionDefault     = Nothing
       })
-    <*> defineOption optionType_string (\o2 -> o2 {
+    <*> defineOption optionType_string (\o -> o {
         optionDefault     = stdFileName,
         optionLongFlags   = ["input-file"],
         optionShortFlags  = ['i'],
         optionDescription = "read input from this file"
       })
-    <*> simpleOption "output-format" outputFormatDefault "set the output format"
+    <*> defineOption optionType_string (\o -> o {
+        optionDefault     = outputFormatDefault,
+        optionLongFlags   = ["output-format"],
+        optionShortFlags  = ['f'],
+        optionDescription = "set the output format"
+      })
 
 
 -- |Legacy test data
@@ -96,48 +101,46 @@ putErrorLine = hPutStrLn stderr
 
 -- |Open a file and return the contents as parsed json
 getFromFile :: JSON a => String -> IO(Result a)
-getFromFile filename = do
-  string <- readFile filename
-  return $ decodeStrict string
+getFromFile filename =
+  readFile filename >>= (return . decodeStrict)
 
 
 -- |Open a file and write json to it
 writeToFile :: String -> JSValue -> IO()
-writeToFile filename v =
-  writeFile filename $ JSON.encode v
+writeToFile filename = (writeFile filename).(JSON.encode)
 
 
 -- |Turns parsed json values into the internally used datastructures.
 toNative :: Result JSValue -> Result ([Result Rule], [Result Lesson])
-toNative i = do
-  v <- i
-  inner v
+toNative (Ok (JSObject o))  = do
+    rv      <- valFromObj ruleKey o
+    lv      <- valFromObj lessonKey o
 
-  where
-    inner :: JSValue -> Result ([Result Rule], [Result Lesson])
-    inner (JSObject o)  = do
-      rv      <- valFromObj ruleKey o
-      lv      <- valFromObj lessonKey o
+    rules   <- extractRules rv
+    lessons <- extractLessons lv
 
-      rules   <- extractRules rv
-      lessons <- extractLessons lv
-
-      return (rules, lessons)
-    inner _             = Error "wrong value type"
+    return (rules, lessons)
+toNative (Ok _)             = Error "wrong value type"
+toNative (Error e)          = Error e
 
 
 -- |Transform Native the native schedules into JSON
 fromNative :: [MappedSchedule] -> JSValue
-fromNative m = JSArray (liftM (JSArray . convert) m)
+fromNative = JSArray.(liftM convert)
   where
-    convert :: MappedSchedule -> [JSValue]
-    convert e = do
-      ((i,j),b) <- Map.assocs e
-      return $ JSObject (JSON.toJSObject [
-                          ("day", showJSON i),
-                          ("slot", showJSON j),
-                          ("subject", showJSON (subject b))
-                          ])
+    convert :: MappedSchedule -> JSValue
+    convert = pure (\a b -> JSObject (JSON.toJSObject [a,b]))
+        <*> (((,) "weight") . showJSON . totalWeight)
+        <*> (((,) "values") . JSArray .
+              (map
+                (\((i, j), b) ->
+                  JSObject (JSON.toJSObject [
+                            ("day", showJSON i),
+                            ("slot", showJSON j),
+                            ("subject", showJSON (subject b))
+                          ]))
+                ) . (Map.assocs)
+              )
 
 
 -- |Turns a parsed json value into a 'List' of 'Rule's or return an 'Error'
@@ -172,8 +175,7 @@ extractRules _             = Error "key lessons does not contain array"
 
 -- |Print a string if debug is enabled
 printDebug :: Show a => a -> IO()
-printDebug o =
-  when debugMode $ print o
+printDebug = (when debugMode) . print
 
 
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
@@ -197,10 +199,10 @@ extractLessons _            = Error "wrong value type"
   Evaluates the transformed json, compiles (useful) error messages, prints them
   and then runs the algorithm or, if the errors are too severe, abourts.
 -}
-reportAndExecute :: Result ([Result Rule], [Result Lesson]) -> IO()
-reportAndExecute (Error s)    =
+reportAndExecute :: String -> Result ([Result Rule], [Result Lesson]) -> IO()
+reportAndExecute _ (Error s)    =
   putErrorLine $ "Stopped execution due to a severe problem with the input data:" ++ show s
-reportAndExecute (Ok (r, l))  = do
+reportAndExecute outputFormat (Ok (r, l))  = do
   rules   <- reportOrReturn r
   lessons <- reportOrReturn l
 
@@ -215,16 +217,16 @@ reportAndExecute (Ok (r, l))  = do
       putStrLn "Calculation failed, no valid schedule possible"
     Just calculated ->
 
-      case outputFormatDefault of
+      case outputFormat of
 
         "print" -> do
 
           putStrLn "\n"
-          _       <- mapM print rules
+          _       <- mapM printDebug rules
           putStrLn "\n"
 
           putStrLn "\n"
-          _       <- mapM print weighted
+          _       <- mapM printDebug weighted
           putStrLn "\n"
 
           putStrLn "Legend:"
@@ -263,6 +265,9 @@ reportAndExecute (Ok (r, l))  = do
 -}
 main :: IO()
 main = runCommand $ \opts args -> do
-  print opts
-  putStrLn (foldl (++) "" args)
-  print (outputFormat opts)
+  rawInput <- getFromFile $ inputFile opts
+
+  reportAndExecute (outputFormat opts) (toNative rawInput)
+  -- printDebug opts
+  -- putStrLn (foldl (++) "" args)
+  -- print (outputFormat opts)
