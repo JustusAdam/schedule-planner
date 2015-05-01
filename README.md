@@ -6,7 +6,9 @@ Base algorithm seems to work, will add UI soon.
 
 ## Install
 
-- clone the repository `git clone https://github.com/JustusAdam/schedule-planner`
+- get the software
+    - clone the repository `git clone https://github.com/JustusAdam/schedule-planner`  
+    - or find the package on [Hackage](http://hackage.haskell.org/package/schedule-planner-0.1.0.0/candidate)
 - install using cabal `cabal install`
 
 ## Usage

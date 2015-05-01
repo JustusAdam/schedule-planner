@@ -5,7 +5,7 @@ build-type: Simple
 license: LGPL-3
 license-file: LICENSE
 copyright: 2015
-maintainer: justus <development@justusadam.com>
+maintainer: Justus Adam <development@justusadam.com>
 stability: experimental
 synopsis: Find the ideal lesson layout
 description:
@@ -14,7 +14,7 @@ description:
     The primary data format for in- and output is json, a deployable server
     instance of this software is planned.
 category: Data, Convenience, Planning
-author: Justus Adam
+author: Justus Adam <development@justusadam.com>
 data-dir: ""
 extra-source-files: README.md
 
