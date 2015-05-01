@@ -25,6 +25,7 @@ import qualified Data.Map          as Map (Map, empty, findWithDefault, insert,
                                            insertWith, lookup, update)
 import           Data.Tuple        (swap)
 import           Data.Typeable     (Typeable)
+import Control.Monad.Trans.State
 
 
 -- |The scope and target a 'Rule' whishes to influence
@@ -70,25 +71,26 @@ instance DynamicRule SimpleDynRule where
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
 reCalcMaps :: WeightMapTuple -> Lesson s -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
-reCalcMaps wmt l (rs, rd, rc) = ((rsn, rdn, rcn), weightTuple3)
-  where
-    (weightTuple1, rsn) = reC l timeslot wmt rs
-    (weightTuple2, rdn) = reC l day weightTuple1 rd
-    (weightTuple3, rcn) = reC l time weightTuple2 rc
+reCalcMaps wmt l (rs, rd, rc) = runState (do
+  rsn <- reCalcHelper l timeslot rs
+  rdn <- reCalcHelper l day rd
+  rcn <- reCalcHelper l time rc
+  return (rsn, rdn, rcn)) wmt
 
 
-reC :: Ord k
+reCalcHelper :: Ord k
     => Lesson s
     -> (Lesson s -> k)
-    -> WeightMapTuple
     -> Map.Map k [SimpleDynRule]
-    -> (WeightMapTuple, Map.Map k [SimpleDynRule])
-reC inserted accessor s rMap = do
+    -> State WeightMapTuple (Map.Map k [SimpleDynRule])
+reC inserted accessor rMap =
   case Map.lookup (accessor inserted) rMap of
-    Nothing     -> (s, rMap)
-    Just rules  -> (newState, Map.insert (accessor inserted) newRules rMap)
-      where
-        (newState, newRules) = mapAccumL (trigger inserted) s rules
+    Nothing     -> return rMap
+    Just rules  -> do
+      s <- get
+      let (newState, newRules) = mapAccumL (trigger inserted) s rules
+      put newState
+      return $ Map.insert (accessor inserted) newRules rMap
 
 
 -- |Apply a function to only the first element of a 2-tuple
