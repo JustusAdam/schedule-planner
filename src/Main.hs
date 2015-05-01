@@ -13,26 +13,26 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
-import Calculator
-import           Control.Applicative ((<*>), pure)
+import           Calculator
+import           Control.Applicative (pure, (<*>))
 import           Control.Monad       (liftM, when)
 import qualified Data.List           as List (take)
-import qualified Data.Map            as Map (insert, assocs, keys)
+import qualified Data.Map            as Map (assocs, insert, keys)
 import           Data.Maybe          (fromMaybe)
-import           Options             (Options, runCommand, optionLongFlags,
-                                      optionShortFlags, optionType_maybe,
-                                      optionType_string, optionDefault,
-                                      optionDescription, defineOption,
-                                      defineOptions)
+import           Options             (Options, defineOption, defineOptions,
+                                      optionDefault, optionDescription,
+                                      optionLongFlags, optionShortFlags,
+                                      optionType_maybe, optionType_string,
+                                      runCommand)
 import           System.IO           (hPutStrLn, stderr)
-import           Text.JSON           as JSON (JSValue(JSArray, JSObject),
-                                              encode, Result(..), valFromObj,
-                                              showJSON, JSObject, toJSObject,
-                                              JSON, decodeStrict)
+import           Text.JSON           as JSON (JSON, JSObject,
+                                              JSValue (JSArray, JSObject),
+                                              Result (..), decodeStrict, encode,
+                                              showJSON, toJSObject, valFromObj)
 
 
 -- |Enables debug messages
-debugMode = True
+debugMode     = True
 -- |Temporary constant, should be in call args eventually
 outputFormatDefault = "print"
 
@@ -106,8 +106,7 @@ putErrorLine = hPutStrLn stderr
 
 -- |Open a file and return the contents as parsed json
 getFromFile :: JSON a => String -> IO(Result a)
-getFromFile filename =
-  liftM decodeStrict (readFile filename)
+getFromFile filename = liftM decodeStrict (readFile filename)
 
 
 -- |Open a file and write json to it
@@ -134,7 +133,8 @@ fromNative :: Show s => [MappedSchedule s] -> JSValue
 fromNative = JSArray . map convert
   where
     convert :: Show s => MappedSchedule s -> JSValue
-    convert = pure (\a b -> JSObject (JSON.toJSObject [a,b]))
+    convert =
+      pure (\a b -> JSObject (JSON.toJSObject [a,b]))
         <*> ((,) "weight" . showJSON . totalWeight)
         <*> ((,) "values" . JSArray .
               map
@@ -150,9 +150,7 @@ fromNative = JSArray . map convert
 
 -- |Turns a parsed json value into a 'List' of 'Rule's or return an 'Error'
 extractRules :: JSValue -> Result [Result Rule]
-extractRules (JSArray rv)  =
-  return $ map handleOne rv
-
+extractRules (JSArray rv)  = return $ map handleOne rv
   where
     handleOne :: JSValue -> Result Rule
     handleOne (JSObject o)  = do
@@ -185,9 +183,7 @@ printDebug = when debugMode . print
 
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
 extractLessons :: JSValue -> Result [Result (Lesson String)]
-extractLessons (JSArray a)  =
-  return $ map handleOne a
-
+extractLessons (JSArray a)  = return $ map handleOne a
   where
     handleOne :: JSValue -> Result (Lesson String)
     handleOne (JSObject o)  = do
@@ -251,8 +247,7 @@ reportAndExecute outputFormat (Ok (r, l))  = do
     pc = mapM (putStrLn.("\n\n" ++).formatSchedule)
 
     reportOrReturn :: [Result a] -> IO [a]
-    reportOrReturn []     =
-      return []
+    reportOrReturn []     = return []
     reportOrReturn (x:xs) =
       case x of
         Error s -> do

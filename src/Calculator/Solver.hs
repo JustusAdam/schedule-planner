@@ -59,7 +59,7 @@ data Lesson s = Lesson {
 type MappedLessons s  = Map.Map s [Lesson s]
 -- |type Alias for readability
 -- (Slot, Day)
-type Timeslot       = (Int, Int)
+type Timeslot         = (Int, Int)
 -- |type Alias for readability
 -- represents a schedule
 type MappedSchedule s = Map.Map Timeslot (Lesson s)
@@ -67,7 +67,6 @@ type MappedSchedule s = Map.Map Timeslot (Lesson s)
 
 -- |Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
 time :: Lesson a -> Timeslot
--- time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 time = pure (,) <*> day <*> timeslot
 
 
@@ -76,9 +75,7 @@ time = pure (,) <*> day <*> timeslot
   and more importantly, readable String
 -}
 formatSchedule :: Show s => MappedSchedule s -> String
-formatSchedule hours =
-  intercalate "\n" $ header : map formatDay allHours
-
+formatSchedule hours = intercalate "\n" $ header : map formatDay allHours
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
