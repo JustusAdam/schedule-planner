@@ -116,7 +116,7 @@ writeToFile filename = writeFile filename . JSON.encode
 
 
 -- |Turns parsed json values into the internally used datastructures.
-toNative :: Result JSValue -> Result ([Result Rule], [Result Lesson])
+toNative :: Result JSValue -> Result ([Result Rule], [Result (Lesson String)])
 toNative (Ok (JSObject o))  = do
     rv      <- valFromObj ruleKey o
     lv      <- valFromObj lessonKey o
@@ -130,10 +130,10 @@ toNative (Error e)          = Error e
 
 
 -- |Transform Native the native schedules into JSON
-fromNative :: [MappedSchedule] -> JSValue
+fromNative :: Show s => [MappedSchedule s] -> JSValue
 fromNative = JSArray . map convert
   where
-    convert :: MappedSchedule -> JSValue
+    convert :: Show s => MappedSchedule s -> JSValue
     convert = pure (\a b -> JSObject (JSON.toJSObject [a,b]))
         <*> ((,) "weight" . showJSON . totalWeight)
         <*> ((,) "values" . JSArray .
@@ -142,7 +142,7 @@ fromNative = JSArray . map convert
                   JSObject (JSON.toJSObject [
                             ("day", showJSON i),
                             ("slot", showJSON j),
-                            ("subject", showJSON (subject b))
+                            ("subject", (showJSON . show . subject) b)
                           ]))
                 . Map.assocs
               )
@@ -184,12 +184,12 @@ printDebug = when debugMode . print
 
 
 -- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
-extractLessons :: JSValue -> Result [Result Lesson]
+extractLessons :: JSValue -> Result [Result (Lesson String)]
 extractLessons (JSArray a)  =
   return $ map handleOne a
 
   where
-    handleOne :: JSValue -> Result Lesson
+    handleOne :: JSValue -> Result (Lesson String)
     handleOne (JSObject o)  = do
       subject <- valFromObj subjectKey o
       day     <- valFromObj lessonDayKey o
@@ -204,7 +204,7 @@ extractLessons _            = Error "wrong value type"
   Evaluates the transformed json, compiles (useful) error messages, prints them
   and then runs the algorithm or, if the errors are too severe, abourts.
 -}
-reportAndExecute :: String -> Result ([Result Rule], [Result Lesson]) -> IO()
+reportAndExecute :: String -> Result ([Result Rule], [Result (Lesson String)]) -> IO()
 reportAndExecute _ (Error s)    =
   putErrorLine $ "Stopped execution due to a severe problem with the input data:" ++ show s
 reportAndExecute outputFormat (Ok (r, l))  = do

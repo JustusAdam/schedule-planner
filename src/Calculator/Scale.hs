@@ -49,7 +49,7 @@ type DynRuleTuple   = (Map.Map Int [SimpleDynRule],
 
 -- |Scaffolding of a dynamic rule
 class DynamicRule a where
-  trigger          :: Lesson -> WeightMapTuple -> a -> (WeightMapTuple, a)
+  trigger          :: Lesson s -> WeightMapTuple -> a -> (WeightMapTuple, a)
   getTriggerTarget :: a -> [Target]
 
 
@@ -66,7 +66,7 @@ instance DynamicRule SimpleDynRule where
 
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: WeightMapTuple -> Lesson -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
+reCalcMaps :: WeightMapTuple -> Lesson s -> DynRuleTuple -> (DynRuleTuple, WeightMapTuple)
 reCalcMaps wmt l (rs, rd, rc) =
   ((rsn, rdn, rcn), weightTuple3)
   where
@@ -84,7 +84,7 @@ reCalcMaps wmt l (rs, rd, rc) =
 
 
 -- |Helper function for reCalcMaps
-reCalcMaps' :: DynamicRule a => Lesson ->  WeightMapTuple -> [a] -> (WeightMapTuple, [a])
+reCalcMaps' :: DynamicRule a => Lesson s ->  WeightMapTuple -> [a] -> (WeightMapTuple, [a])
 reCalcMaps' inserted = mapAccumL (trigger inserted)
 
 
@@ -107,7 +107,7 @@ applyToSecond f (x, y) = (x, f y)
   Resulting 'Lesson's are exactly the same, except for the weight
   component which is the old weight + the weight calculated from the rules
 -}
-weigh :: [Rule] -> [Lesson] -> [Lesson]
+weigh :: [Rule] -> [Lesson s] -> [Lesson s]
 weigh rs = map (weighOne (calcMaps rs))
 
 
@@ -115,7 +115,7 @@ weigh rs = map (weighOne (calcMaps rs))
   Weighs a single 'Lesson', but instead of 'Rule's expects a
   'Tuple' of weight increase maps.
 -}
-weighOne :: WeightMapTuple -> Lesson -> Lesson
+weighOne :: WeightMapTuple -> Lesson s -> Lesson s
 weighOne (ms, md, mc) l =
   l {
       weight =

@@ -46,27 +46,27 @@ cellWidth   = 20
 
 
 -- |Base datastructure for representing lessons
-data Lesson = Lesson {
+data Lesson s = Lesson {
   timeslot :: Int,
   day      :: Int,
   weight   :: Int,
-  subject  :: String
+  subject  :: s
 } deriving (Show, Eq, Ord, Typeable, Data)
 
 
 -- |type Alias for readability
 -- maps lessons to their respective subject
-type MappedLessons  = Map.Map String [Lesson]
+type MappedLessons s  = Map.Map s [Lesson s]
 -- |type Alias for readability
 -- (Slot, Day)
 type Timeslot       = (Int, Int)
 -- |type Alias for readability
 -- represents a schedule
-type MappedSchedule = Map.Map Timeslot Lesson
+type MappedSchedule s = Map.Map Timeslot (Lesson s)
 
 
 -- |Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
-time :: Lesson -> Timeslot
+time :: Lesson a -> Timeslot
 -- time (Lesson {day=day, timeslot=timeslot}) = (day, timeslot)
 time = pure (,) <*> day <*> timeslot
 
@@ -75,7 +75,7 @@ time = pure (,) <*> day <*> timeslot
   Transform a 'MappedSchedule' into a printable,
   and more importantly, readable String
 -}
-formatSchedule :: MappedSchedule -> String
+formatSchedule :: Show s => MappedSchedule s -> String
 formatSchedule hours =
   intercalate "\n" $ header : map formatDay allHours
 
@@ -84,7 +84,7 @@ formatSchedule hours =
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (reverse.take cellWidth.reverse.subject) (Map.lookup i hours)
+      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (reverse.take cellWidth.reverse.show.subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
@@ -93,21 +93,21 @@ formatSchedule hours =
 
 
 -- |Convenience function to obtain the total weight of a particular Schedule
-totalWeight :: MappedSchedule -> Int
+totalWeight :: MappedSchedule a -> Int
 totalWeight = Map.foldl (+) 0 . Map.map weight
 
 
 {-|
   Map a List of 'Lesson's to their respective subjects
 -}
-mapToSubject :: [Lesson] -> Map.Map String [Lesson]
+mapToSubject :: Ord s => [Lesson s] -> Map.Map s [Lesson s]
 mapToSubject = Map.fromListWith (++) . map (\x -> (subject x, [x]))
 
 
 {-|
   Same as 'calcFromMap' but operates on a List of 'Lesson's
 -}
-calcFromList :: [Lesson] -> Maybe [MappedSchedule]
+calcFromList :: Ord s => [Lesson s] -> Maybe [MappedSchedule s]
 calcFromList = calcFromMap.mapToSubject
 
 
@@ -118,7 +118,7 @@ calcFromList = calcFromMap.mapToSubject
   of lightest schedules by branching the evaluation at avery point
   where there is a timeslot collision
 -}
-calcFromMap :: Map.Map String [Lesson] -> Maybe [MappedSchedule]
+calcFromMap :: Ord s => Map.Map s [Lesson s] -> Maybe [MappedSchedule s]
 calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
   | otherwise               = Map.lookup subjX sortedLessons >>=
@@ -134,7 +134,7 @@ calcFromMap mappedLessons
   Helper function for 'calcFromMap'
   represents a recusively called and forking calculation step
 -}
-calc' :: Lesson -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]
+calc' :: Ord s => Lesson s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
 calc' x lists hourMap minList =
   case Map.lookup (time x) hourMap of
 
@@ -153,7 +153,7 @@ calc' x lists hourMap minList =
   where
     newMap = Map.insert (time x) x hourMap
 
-    reduceLists :: String -> MappedLessons -> MappedSchedule -> [String] -> Maybe [MappedSchedule]
+    reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
     reduceLists s lists schedules subjects = Map.lookup s lists >>=
       (\l ->
         case l of
