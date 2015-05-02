@@ -13,22 +13,22 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main where
 
-import           Calculator
-import           Control.Applicative (pure, (<*>))
-import           Control.Monad       (liftM, when)
-import qualified Data.List           as List (take)
-import qualified Data.Map            as Map (assocs, insert, keys)
-import           Data.Maybe          (fromMaybe)
-import           Options             (Options, defineOption, defineOptions,
-                                      optionDefault, optionDescription,
-                                      optionLongFlags, optionShortFlags,
-                                      optionType_maybe, optionType_string,
-                                      runCommand)
-import           System.IO           (hPutStrLn, stderr)
-import           Text.JSON           as JSON (JSON, JSObject,
-                                              JSValue (JSArray, JSObject),
-                                              Result (..), decodeStrict, encode,
-                                              showJSON, toJSObject, valFromObj)
+import           Control.Applicative        (pure, (<*>))
+import           Control.Monad              (liftM, when)
+import qualified Data.List                  as List (take)
+import qualified Data.Map                   as Map (assocs, insert, keys)
+import           Data.Maybe                 (fromMaybe)
+import           Options                    (Options, defineOption,
+                                             defineOptions, optionDefault,
+                                             optionDescription, optionLongFlags,
+                                             optionShortFlags, optionType_maybe,
+                                             optionType_string, runCommand)
+import           SchedulePlanner.Calculator
+import           System.IO                  (hPutStrLn, stderr)
+import           Text.JSON                  as JSON (JSON, JSObject, valFromObj,
+                                                     JSValue (JSArray, JSObject),
+                                                     Result (..), decodeStrict,
+                                                     encode, showJSON, toJSObject)
 
 
 -- |Enables debug messages

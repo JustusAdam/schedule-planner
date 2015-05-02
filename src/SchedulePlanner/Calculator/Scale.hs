@@ -10,23 +10,24 @@ Portability : POSIX
 
 This module is used to weigh a list of lessons according to rules.
 -}
-module Calculator.Scale (
+module SchedulePlanner.Calculator.Scale (
   weigh,
   Rule(..),
   Target(..),
   calcMaps
 ) where
 
-import           Calculator.Solver         (Lesson (..), time, timeslot)
-import           Control.Applicative       (pure, (<*>))
-import           Control.Monad.Trans.State (State, get, put, runState)
-import           Data.Data                 (Data)
-import           Data.List                 as List (mapAccumL)
-import qualified Data.Map                  as Map (Map, empty, findWithDefault,
-                                                   insert, insertWith, lookup,
-                                                   update)
-import           Data.Tuple                (swap)
-import           Data.Typeable             (Typeable)
+import           Control.Applicative               (pure, (<*>))
+import           Control.Monad.Trans.State         (State, get, put, runState)
+import           Data.Data                         (Data)
+import           Data.List                         as List (mapAccumL)
+import qualified Data.Map                          as Map (Map, empty,
+                                                           findWithDefault,
+                                                           insert, insertWith,
+                                                           lookup, update)
+import           Data.Tuple                        (swap)
+import           Data.Typeable                     (Typeable)
+import           SchedulePlanner.Calculator.Solver (Lesson (..), time, timeslot)
 
 
 -- |The scope and target a 'Rule' whishes to influence
@@ -43,9 +44,6 @@ type WeightMap   = Map.Map Target Int
 type DynRuleTuple   = (Map.Map Int [SimpleDynRule],
                        Map.Map Int [SimpleDynRule],
                        Map.Map (Int, Int) [SimpleDynRule])
-
-
--- instance Ord Target where
 
 
 -- |Scaffolding of a dynamic rule
@@ -112,7 +110,7 @@ weigh rs = map (weighOne (calcMaps rs))
 
 {-|
   Weighs a single 'Lesson', but instead of 'Rule's expects a
-  'Tuple' of weight increase maps.
+  weight increase map.
 -}
 weighOne :: WeightMap -> Lesson s -> Lesson s
 weighOne wm l =
@@ -128,7 +126,7 @@ allTargeting l = pure (\a b c -> a + b + c)
 
 
 {-|
-  Contruct a 'Tuple' of /scope -> weight increase/ maps for more efficient
+  Contruct a /scope -> weight increase/ map for more efficient
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMap

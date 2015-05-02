@@ -12,7 +12,7 @@ This module provides functions for calculating possibilities for an ideal
 schedule layout from weighted Lessons as well as providing functions for
 converting them into readable/printable format.
 -}
-module Calculator.Solver (
+module SchedulePlanner.Calculator.Solver (
   calcFromMap,
   calcFromList,
   mapToSubject,

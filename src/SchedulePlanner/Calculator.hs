@@ -10,7 +10,7 @@ Portability : POSIX
 Exports the most important functions neccessary for the actual work
 of this software
 -}
-module Calculator(
+module SchedulePlanner.Calculator(
   calcFromMap,
   calcFromList,
   formatSchedule,
@@ -24,5 +24,5 @@ module Calculator(
   weigh
 ) where
 
-import Calculator.Scale
-import Calculator.Solver
+import SchedulePlanner.Calculator.Scale
+import SchedulePlanner.Calculator.Solver
