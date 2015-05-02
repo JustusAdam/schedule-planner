@@ -13,7 +13,6 @@ of this software
 module SchedulePlanner.Calculator(
   calcFromMap,
   calcFromList,
-  formatSchedule,
   totalWeight,
   Lesson (..),
   Timeslot (..),

@@ -16,7 +16,6 @@ module SchedulePlanner.Calculator.Solver (
   calcFromMap,
   calcFromList,
   mapToSubject,
-  formatSchedule,
   totalWeight,
   time,
   Lesson (..),
@@ -27,22 +26,13 @@ module SchedulePlanner.Calculator.Solver (
 
 import           Control.Applicative (pure, (<*>))
 import           Data.Data           (Data)
-import           Data.List           as List (intercalate, sortBy, take)
+import           Data.List           as List (sortBy, take)
 import qualified Data.Map            as Map (Map, empty, foldl, fromList,
                                              fromListWith, insert, keys, lookup,
                                              map, null, toList)
 import           Data.Maybe          (fromMaybe)
 import qualified Data.Ord            as Ord (comparing)
 import           Data.Typeable       (Typeable)
-import           Text.Printf         (printf)
-
-
--- |How many days a week has
-daysPerWeek = 7
--- |The amount of imeslots each day
-slotsPerDay = 7
--- |The caracter width of a single slot in output
-cellWidth   = 20
 
 
 -- |Base datastructure for representing lessons
@@ -70,25 +60,6 @@ time :: Lesson a -> Timeslot
 time = pure (,) <*> day <*> timeslot
 
 
-{-|
-  Transform a 'MappedSchedule' into a printable,
-  and more importantly, readable String
--}
-formatSchedule :: Show s => MappedSchedule s -> String
-formatSchedule hours = intercalate "\n" $ header : map formatDay allHours
-  where
-    allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
-
-    formatLesson :: Timeslot -> String
-    formatLesson i =
-      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (reverse.take cellWidth.reverse.show.subject) (Map.lookup i hours)
-
-    formatDay :: (Int, [Int]) -> String
-    formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
-
-    header = printf "Total Weight: %10v" (totalWeight hours)
-
-
 -- |Convenience function to obtain the total weight of a particular Schedule
 totalWeight :: MappedSchedule a -> Int
 totalWeight = Map.foldl (+) 0 . Map.map weight
@@ -106,7 +77,6 @@ mapToSubject = Map.fromListWith (++) . map (\x -> (subject x, [x]))
 -}
 calcFromList :: Ord s => [Lesson s] -> Maybe [MappedSchedule s]
 calcFromList = calcFromMap.mapToSubject
-
 
 
 {-|
