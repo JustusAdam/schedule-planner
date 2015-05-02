@@ -18,7 +18,8 @@ module Calculator.Scale (
 ) where
 
 import           Calculator.Solver         (Lesson (..), time, timeslot)
-import           Control.Monad.Trans.State (State, put, get, runState)
+import           Control.Applicative       (pure, (<*>))
+import           Control.Monad.Trans.State (State, get, put, runState)
 import           Data.Data                 (Data)
 import           Data.List                 as List (mapAccumL)
 import qualified Data.Map                  as Map (Map, empty, findWithDefault,
