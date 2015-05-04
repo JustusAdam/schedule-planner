@@ -13,8 +13,7 @@ module SchedulePlanner.Serialize where
 
 import           Control.Monad              (liftM)
 import           Data.List                  (intercalate)
-import qualified Data.Map                   as Map (assocs)
-import qualified Data.Map                   as Map (lookup)
+import qualified Data.Map                   as Map (assocs, lookup)
 import           SchedulePlanner.Calculator
 import           Text.JSON                  as JSON (JSON, JSObject, JSValue (JSArray, JSObject),
                                                      Result (..), decodeStrict,

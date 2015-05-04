@@ -41,12 +41,10 @@ data SimpleDynRule  = SimpleDynRule {sDynTarget :: Target, sDynSeverity :: Int} 
 -- |Type alias for more expressive function signature
 type WeightMap   = Map.Map Target Int
 -- |Type alias for structure holding the dynamic rules
-type DynRuleTuple   = (Map.Map Int [SimpleDynRule],
-                       Map.Map Int [SimpleDynRule],
-                       Map.Map (Int, Int) [SimpleDynRule])
+type DynRuleMap  = Map.Map Target [SimpleDynRule]
 
 
--- |Scaffolding of a dynamic rule
+-- |Scaffolding for a dynamic rule
 class DynamicRule a where
   trigger          :: Lesson s -> WeightMap -> a -> (WeightMap, a)
   getTriggerTarget :: a -> [Target]
@@ -60,29 +58,29 @@ instance DynamicRule SimpleDynRule where
 
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: WeightMap -> Lesson s -> DynRuleTuple -> (DynRuleTuple, WeightMap)
-reCalcMaps weightMap lesson (slotRules, dayRules, cellRules) = runState (do
+reCalcMaps :: WeightMap -> Lesson s -> DynRuleMap -> (DynRuleMap, WeightMap)
+reCalcMaps weightMap lesson rules = runState (
 
-  newSlotRules  <- reCalcHelper lesson timeslot slotRules
-  newDayRules   <- reCalcHelper lesson day      dayRules
-  newCellRules  <- reCalcHelper lesson time     cellRules
+  reCalcHelper lesson (Slot (timeslot lesson)) rules
+  >>= reCalcHelper lesson (Day (day lesson))
+  >>= reCalcHelper lesson (uncurry Cell (time lesson))
 
-  return (newSlotRules, newDayRules, newCellRules)) weightMap
+  ) weightMap
 
 
 reCalcHelper :: Ord k
     => Lesson s
-    -> (Lesson s -> k)
+    -> k
     -> Map.Map k [SimpleDynRule]
     -> State WeightMap (Map.Map k [SimpleDynRule])
-reCalcHelper inserted accessor rMap =
-  case Map.lookup (accessor inserted) rMap of
+reCalcHelper inserted key rMap =
+  case Map.lookup key rMap of
     Nothing     -> return rMap
     Just rules  -> do
       s <- get
       let (newState, newRules) = mapAccumL (trigger inserted) s rules
       put newState
-      return $ Map.insert (accessor inserted) newRules rMap
+      return $ Map.insert key newRules rMap
 
 
 -- |Apply a function to only the first element of a 2-tuple
@@ -121,7 +119,7 @@ allTargeting :: Lesson s -> WeightMap -> Int
 allTargeting l = pure (\a b c -> a + b + c)
   <*> Map.findWithDefault 0 (Slot $ timeslot l)
   <*> Map.findWithDefault 0 (Day $ day l)
-  <*> Map.findWithDefault 0 ((uncurry Cell) $ time l)
+  <*> Map.findWithDefault 0 (uncurry Cell $ time l)
 
 
 
@@ -138,4 +136,4 @@ calcMaps = (`calcMapsStep` Map.empty)
 -}
 calcMapsStep :: [Rule] -> WeightMap -> WeightMap
 calcMapsStep []               = id
-calcMapsStep (Rule t sev :xs) = (calcMapsStep xs).(Map.insertWith (+) t sev)
+calcMapsStep (Rule t sev :xs) = calcMapsStep xs . Map.insertWith (+) t sev
