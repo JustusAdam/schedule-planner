@@ -61,9 +61,9 @@ instance DynamicRule SimpleDynRule where
 reCalcMaps :: WeightMap -> Lesson s -> DynRuleMap -> (DynRuleMap, WeightMap)
 reCalcMaps weightMap lesson rules = runState (
 
-  reCalcHelper lesson (Slot (timeslot lesson)) rules
-  >>= reCalcHelper lesson (Day (day lesson))
-  >>= reCalcHelper lesson (uncurry Cell (time lesson))
+  reCalcHelper lesson (Slot (timeslot lesson)) rules >>=
+    reCalcHelper lesson (Day (day lesson)) >>=
+      reCalcHelper lesson (uncurry Cell (time lesson))
 
   ) weightMap
 

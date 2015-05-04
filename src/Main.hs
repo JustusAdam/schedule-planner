@@ -112,7 +112,7 @@ reportAndExecute outputFormat (Ok (r, l))  = do
           putStrLn "\n"
 
           putStrLn "Legend:"
-          _       <- mapM (print . (pure (,) <*> List.take 10 <*> id) ) (Map.keys mappedLessons)
+          _       <- mapM (print . (pure (,) <*> shortSubject <*> id) ) (Map.keys mappedLessons)
 
 
           putStrLn "\n"

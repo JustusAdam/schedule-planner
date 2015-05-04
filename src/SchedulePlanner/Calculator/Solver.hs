@@ -88,10 +88,10 @@ calcFromList = calcFromMap.mapToSubject
 calcFromMap :: Ord s => Map.Map s [Lesson s] -> Maybe [MappedSchedule s]
 calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
-  | otherwise               = Map.lookup subjX sortedLessons
-    >>= (\(x : xs) ->
-          calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
-        )
+  | otherwise               = Map.lookup subjX sortedLessons >>=
+    (\(x : xs) ->
+      calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
+    )
   where
     sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList)   = Map.keys sortedLessons
@@ -108,8 +108,8 @@ calc' x lists hourMap minList =
     Nothing   ->
       case minList of
         []        -> return [newMap]
-        (c : cs)  -> Map.lookup c lists
-          >>= (\(l : ls) -> calc' l (Map.insert c ls lists) newMap cs)
+        (c : cs)  -> Map.lookup c lists >>=
+          (\(l : ls) -> calc' l (Map.insert c ls lists) newMap cs)
 
     Just old  ->
       return $ r1 ++ r2
@@ -121,9 +121,9 @@ calc' x lists hourMap minList =
     newMap = Map.insert (time x) x hourMap
 
     reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
-    reduceLists s lists schedules subjects = Map.lookup s lists
-      >>= (\l ->
-            case l of
-              []        -> Nothing
-              (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
-          )
+    reduceLists s lists schedules subjects = Map.lookup s lists >>=
+      (\l ->
+        case l of
+          []        -> Nothing
+          (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
+      )

@@ -11,6 +11,7 @@ Hold the capeablilities to get and export in- and output data as well as (de)ser
 -}
 module SchedulePlanner.Serialize where
 
+import           Control.Applicative        (pure, (<*>))
 import           Control.Monad              (liftM)
 import           Data.List                  (intercalate)
 import qualified Data.Map                   as Map (assocs, lookup)
@@ -142,6 +143,10 @@ extractLessons (JSArray a)  = return $ map handleOne a
 extractLessons _            = Error "wrong value type"
 
 
+shortSubject :: Show s => s -> String
+shortSubject = reverse . take cellWidth . reverse . show
+
+
 {-|
   Transform a 'MappedSchedule' into a printable,
   and more importantly, readable String
@@ -153,7 +158,7 @@ formatSchedule hours = intercalate "\n" $ header : map formatDay allHours
 
     formatLesson :: Timeslot -> String
     formatLesson i =
-      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (reverse.take cellWidth.reverse.show.subject) (Map.lookup i hours)
+      printf ("%" ++ show cellWidth ++ "v") $ maybe [] (shortSubject . subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
