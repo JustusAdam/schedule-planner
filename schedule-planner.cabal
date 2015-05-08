@@ -20,7 +20,7 @@ extra-source-files: README.md
 
 executable schedule-planner
     build-depends:
-      base >= 4 && < 5,
+      base == 4.8.0.0,
       containers -any,
       json -any,
       options -any,
