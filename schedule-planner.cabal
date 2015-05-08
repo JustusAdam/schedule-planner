@@ -19,7 +19,14 @@ data-dir: ""
 extra-source-files: README.md
 
 executable schedule-planner
-    build-depends: base >= 4 && < 5, containers -any, json -any, options -any, transformers > 0.4
+    build-depends:
+      base >= 4 && < 5,
+      containers -any,
+      json -any,
+      options -any,
+      transformers > 0.4,
+      happstack-lite > 7,
+      mtl > 1
     main-is: Main.hs
     buildable: True
     default-language: Haskell2010

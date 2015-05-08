@@ -62,9 +62,15 @@ writeToFile :: String -> JSValue -> IO()
 writeToFile filename = writeFile filename . JSON.encode
 
 
+-- | parses file as JSON and returns internally used data structures
+-- | convenience function
+deSerialize :: String -> Result ([Result Rule], [Result (Lesson String)])
+deSerialize = transformTypes . decodeStrict
+
+
 -- |Turns parsed json values into the internally used datastructures.
-deSerialize :: Result JSValue -> Result ([Result Rule], [Result (Lesson String)])
-deSerialize (Ok (JSObject o))  = do
+transformTypes :: Result JSValue -> Result ([Result Rule], [Result (Lesson String)])
+transformTypes (Ok (JSObject o))  = do
     rv      <- valFromObj ruleKey o
     lv      <- valFromObj lessonKey o
 
@@ -72,8 +78,8 @@ deSerialize (Ok (JSObject o))  = do
     lessons <- extractLessons lv
 
     return (rules, lessons)
-deSerialize (Ok _)             = Error "wrong value type"
-deSerialize (Error e)          = Error e
+transformTypes (Ok _)             = Error "wrong value type"
+transformTypes (Error e)          = Error e
 
 
 serialize :: Show s => [MappedSchedule s] -> String
