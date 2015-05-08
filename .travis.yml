@@ -2,3 +2,8 @@ language: haskell
 notifications:
   email: true
 ghc: 7.4
+sudo: required
+before_install:
+  - sudo apt-get install --only-upgrade ghc
+  - cabal install cabal-install
+  - cabal --version
