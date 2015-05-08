@@ -1,4 +1,8 @@
-module SchedulePlanner.App where
+module SchedulePlanner.App (
+  reportAndPrint,
+  reportAndExecute
+  ) where
+
 
 import           Control.Applicative        (pure, (<*>))
 import           Control.Monad.Writer
