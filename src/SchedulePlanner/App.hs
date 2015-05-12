@@ -1,13 +1,14 @@
 module SchedulePlanner.App where
 
-import           SchedulePlanner.Calculator
-import           SchedulePlanner.Serialize
-import Control.Monad.Writer
-import           Text.JSON                  as JSON (Result (..))
+import           Control.Applicative        (pure, (<*>))
+import           Control.Monad.Writer
 import qualified Data.List                  as List (take)
 import qualified Data.Map                   as Map (keys)
 import           Data.Maybe                 (fromMaybe)
-import System.IO (stderr, hPutStrLn)
+import           SchedulePlanner.Calculator
+import           SchedulePlanner.Serialize
+import           System.IO                  (hPutStrLn, stderr)
+import           Text.JSON                  as JSON (Result (..))
 
 
 
