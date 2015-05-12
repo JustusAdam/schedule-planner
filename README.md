@@ -1,4 +1,4 @@
-# The schedule planner [![Build Status](https://travis-ci.org/JustusAdam/schedule-planner.svg?branch=master)](https://travis-ci.org/JustusAdam/schedule-planner) [Hackage version](https://img.shields.io/hackage/v/schedule-planner.svg)
+# The schedule planner [![Build Status](https://travis-ci.org/JustusAdam/schedule-planner.svg?branch=master)](https://travis-ci.org/JustusAdam/schedule-planner) [![Hackage version](https://img.shields.io/hackage/v/schedule-planner.svg)](https://hackage.haskell.org/package/schedule-planner)
 
 Take an arbitrary list of weighted "lessons" and calculate the most ideal and valid layout for them based on weighing rules.
 
