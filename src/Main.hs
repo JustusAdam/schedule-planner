@@ -18,12 +18,12 @@ import           Control.Monad              (liftM, when)
 import           Options                    (Options, defineOption,
                                              defineOptions, optionDefault,
                                              optionDescription, optionLongFlags,
-                                             optionShortFlags, optionType_maybe,
-                                             optionType_string, runCommand,
-                                             optionType_bool)
+                                             optionShortFlags, optionType_bool,
+                                             optionType_maybe,
+                                             optionType_string, runCommand)
+import           SchedulePlanner.App
 import           SchedulePlanner.Calculator
 import           SchedulePlanner.Serialize
-import SchedulePlanner.App
 
 
 -- |Temporary constant, should be in call args eventually
