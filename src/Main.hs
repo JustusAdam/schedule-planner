@@ -34,45 +34,49 @@ outputFormatDefault = "print"
 stdFileName   = "testsuite/test.json"
 
 
-data CallOptions = CallOptions {
-    outputFile   :: Maybe String,
-    inputFile    :: String,
-    outputFormat :: String,
-    server       :: Bool,
-    verbocity    :: Bool
-  } deriving (Show)
+data CallOptions = CallOptions { outputFile   :: Maybe String
+                               , inputFile    :: String
+                               , outputFormat :: String
+                               , server       :: Bool
+                               , verbocity    :: Bool
+                               } deriving (Show)
 
 instance Options CallOptions where
   defineOptions = pure CallOptions
-    <*> defineOption (optionType_maybe optionType_string) (\o -> o {
-        optionLongFlags   = ["output-file"],
-        optionShortFlags  = "o",
-        optionDescription = "print output to this file instead of stdout",
-        optionDefault     = Nothing
-      })
-    <*> defineOption optionType_string (\o -> o {
-        optionDefault     = stdFileName,
-        optionLongFlags   = ["input-file"],
-        optionShortFlags  = "i",
-        optionDescription = "read input from this file"
-      })
-    <*> defineOption optionType_string (\o -> o {
-        optionDefault     = outputFormatDefault,
-        optionLongFlags   = ["output-format"],
-        optionShortFlags  = "f",
-        optionDescription = "set the output format"
-      })
-    <*> defineOption optionType_bool (\o -> o {
-        optionDefault     = False,
-        optionLongFlags   = ["serve"],
-        optionDescription = "Placeholder with no effect yet"
-    })
-    <*> defineOption optionType_bool (\o -> o {
-        optionDefault     = False,
-        optionLongFlags   = ["verbose"],
-        optionShortFlags  = "v",
-        optionDescription = "Print extra information"
-    })
+    <*> defineOption
+          (optionType_maybe optionType_string)
+          (\o -> o { optionLongFlags   = ["output-file"]
+                   , optionShortFlags  = "o"
+                   , optionDescription = "print output to this file instead of stdout"
+                   , optionDefault     = Nothing
+                   })
+    <*> defineOption
+          optionType_string
+          (\o -> o { optionDefault     = stdFileName
+                   , optionLongFlags   = ["input-file"]
+                   , optionShortFlags  = "i"
+                   , optionDescription = "read input from this file"
+                   })
+    <*> defineOption
+          optionType_string
+          (\o -> o { optionDefault     = outputFormatDefault
+                   , optionLongFlags   = ["output-format"]
+                   , optionShortFlags  = "f"
+                   , optionDescription = "set the output format"
+                   })
+    <*> defineOption
+          optionType_bool
+          (\o -> o { optionDefault     = False
+                   , optionLongFlags   = ["serve"]
+                   , optionDescription = "Placeholder with no effect yet"
+                   })
+    <*> defineOption
+          optionType_bool
+          (\o -> o { optionDefault     = False
+                   , optionLongFlags   = ["verbose"]
+                   , optionShortFlags  = "v"
+                   , optionDescription = "Print extra information"
+                   })
 
 
 {-|
@@ -80,7 +84,6 @@ instance Options CallOptions where
   and starts execution.
 -}
 main :: IO()
-main = runCommand $ \opts args -> do
-  rawInput <- readFile (inputFile opts)
-
-  reportAndPrint (outputFormat opts) (verbocity opts) rawInput
+main = runCommand $ (\opts args ->
+  readFile (inputFile opts) >>=
+  reportAndPrint (outputFormat opts) (verbocity opts))

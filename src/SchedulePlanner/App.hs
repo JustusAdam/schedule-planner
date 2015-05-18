@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module SchedulePlanner.App (
   reportAndPrint,
   reportAndExecute
@@ -6,37 +8,38 @@ module SchedulePlanner.App (
 
 import           Control.Applicative        (pure, (<*>))
 import           Control.Monad.Writer
+import           Data.Aeson                 (ToJSON, decode, encode)
+import           Data.ByteString.Lazy       (toStrict)
 import qualified Data.List                  as List (take)
 import qualified Data.Map                   as Map (keys)
 import           Data.Maybe                 (fromMaybe)
+import           Data.Text                  as T (Text, append, pack)
+import qualified Data.Text.Encoding         (decodeUtf8)
+import           Data.Text.IO               as TIO (hPutStrLn)
 import           SchedulePlanner.Calculator
 import           SchedulePlanner.Serialize
 import           System.IO                  (hPutStrLn, stderr)
-import           Text.JSON                  as JSON (Result (..))
 
 
 
 -- |Print a line to stdout
-putErrorLine :: String -> IO()
-putErrorLine = hPutStrLn stderr
+putErrorLine :: Text -> IO()
+putErrorLine = TIO.hPutStrLn stderr
 
 
 -- |Print a string if debug is enabled
-printDebug :: Show a => Bool -> a -> Writer String ()
-printDebug debugMode = when debugMode . tell . show
+printDebug :: Show a => Bool -> a -> Writer Text ()
+printDebug debugMode = when debugMode . tell . pack . show
 
 
 {-|
   Evaluates the transformed json, compiles (useful) error messages, prints them
   and then runs the algorithm or, if the errors are too severe, aborts.
 -}
-reportAndExecute :: String -> Bool -> Result ([Result Rule], [Result (Lesson String)]) -> Writer String ()
-reportAndExecute _ _ (Error s)    =
-  tell $ "Stopped execution due to a severe problem with the input data:" ++ show s
-reportAndExecute outputFormat debugMode (Ok (r, l))  = do
-  rules   <- reportOrReturn r
-  lessons <- reportOrReturn l
-
+reportAndExecute :: (Show a, Ord a, ToJSON a) => Text -> Bool -> Maybe (DataFile a) -> Writer Text ()
+reportAndExecute _ _ (Nothing)    =
+  tell $ "Stopped execution due to a severe problem with the input data:"
+reportAndExecute outputFormat debugMode (Just (DataFile rules lessons))  = do
   let weighted      = weigh rules lessons
 
   let mappedLessons = mapToSubject weighted
@@ -61,7 +64,7 @@ reportAndExecute outputFormat debugMode (Ok (r, l))  = do
           tell "\n"
 
           tell "Legend:"
-          _       <- mapM (tell . show . (pure (,) <*> shortSubject <*> id) ) (Map.keys mappedLessons)
+          _       <- mapM (tell . pack . show . (pure (,) <*> shortSubject <*> id) ) (Map.keys mappedLessons)
 
 
           tell "\n"
@@ -69,23 +72,13 @@ reportAndExecute outputFormat debugMode (Ok (r, l))  = do
           return ()
 
         "json" -> do
-          tell $  serialize calculated
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode calculated
           return ()
 
   where
-    pc = mapM (tell.("\n\n" ++).formatSchedule)
-
-    reportOrReturn :: [Result a] -> Writer String [a]
-    reportOrReturn []     = return []
-    reportOrReturn (x:xs) =
-      case x of
-        Error s -> do
-          tell "Some data was unusable:"
-          tell s
-          reportOrReturn xs
-        Ok v    -> liftM (v:) (reportOrReturn xs)
+    pc = mapM (tell . append "\n\n" . formatSchedule)
 
 
-reportAndPrint :: String -> Bool -> String -> IO()
+reportAndPrint :: Text -> Bool -> Text -> IO()
 reportAndPrint outputFormat debugMode rawInput =
-  putStrLn $ snd $ runWriter $ reportAndExecute outputFormat debugMode (deSerialize rawInput)
+  putStrLn $ snd $ runWriter $ reportAndExecute outputFormat debugMode (decode rawInput)

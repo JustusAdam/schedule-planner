@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      : $Header$
 Description : (de)serializing in- and output
@@ -12,14 +13,21 @@ Hold the capeablilities to get and export in- and output data as well as (de)ser
 module SchedulePlanner.Serialize where
 
 import           Control.Applicative        (pure, (<*>))
-import           Control.Monad              (liftM)
-import           Data.List                  (intercalate)
-import qualified Data.Map                   as Map (assocs, lookup)
+import           Control.Arrow              as Arrow (first)
+import           Data.Aeson                 (FromJSON, Object, ToJSON,
+                                             Value (Object), decode, encode,
+                                             object, parseJSON, toJSON, (.:),
+                                             (.=))
+import           Data.Aeson.Types           (Parser)
+import qualified Data.ByteString            as BS (readFile, writeFile)
+import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
+import           Data.List                  as List (intercalate)
+import qualified Data.Map                   as Map (Map, assocs, lookup, toList)
+import           Data.String                (IsString)
+import           Data.Text                  as T (Text, append, intercalate,
+                                                  pack)
+import           Data.Traversable           (sequenceA)
 import           SchedulePlanner.Calculator
-import           Text.JSON                  as JSON (JSON, JSObject, JSValue (JSArray, JSObject),
-                                                     Result (..), decodeStrict,
-                                                     encode, showJSON,
-                                                     toJSObject, valFromObj)
 import           Text.Printf                (printf)
 
 
@@ -52,101 +60,77 @@ slotsPerDay   = 7
 cellWidth     = 20
 
 
+data DataFile a = DataFile [Rule] [Lesson a]
+
+
+instance FromJSON a => FromJSON (Lesson a) where
+  parseJSON (Object o) =
+    pure Lesson
+      <*> o .: lessonSlotKey
+      <*> o .: lessonDayKey
+      <*> pure 0
+      <*> o .: subjectKey
+
+
+instance ToJSON a => ToJSON (Lesson a) where
+  toJSON =
+    object . sequenceA
+      [ ((.=) lessonSlotKey . timeslot)
+      , ((.=) lessonDayKey  . day)
+      , ((.=) subjectKey    . subject)
+      ]
+
+
+instance ToJSON Rule where
+  toJSON =
+    object . (pure (:)
+      <*> ((.=) severityKey . severity)
+      <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
+    where
+      getTarget :: Target -> (Text, [(Text, Value)])
+      getTarget (Day d)    = ("day", [ruleDayKey .= d])
+      getTarget (Cell d s) = ("cell", [ruleDayKey .= d, ruleSlotKey .= s])
+      getTarget (Slot s)   = ("slot",  [ruleSlotKey .= s])
+
+
+instance FromJSON Rule where
+  parseJSON (Object o) =
+    pure Rule
+      <*> ((o .: scopeKey) >>= (fromScope o))
+      <*> o .: severityKey
+    where
+      fromScope :: Object -> Text -> Parser Target
+      fromScope o "day"  = fmap Day (o .: ruleDayKey)
+      fromScope o "slot" = fmap Slot (o .: ruleSlotKey)
+      fromScope o "cell" = pure Cell <*> o .: ruleSlotKey <*> o .: ruleDayKey
+      fromScope _ _      = error "unknown input"  -- I am so sorry
+
+
+instance FromJSON a => FromJSON (DataFile a) where
+  parseJSON (Object o) =
+    pure DataFile
+      <*> o .: lessonKey
+      <*> o .: ruleKey
+
+instance ToJSON a => ToJSON (DataFile a) where
+  toJSON (DataFile r l) =
+    object
+      [ lessonKey .= l
+      , ruleKey   .= r
+      ]
+
+
+instance ToJSON a => ToJSON (Map.Map Text a) where
+  toJSON = object . map (uncurry (.=)) . Map.toList
+
 -- |Open a file and return the contents as parsed json
-getFromFile :: JSON a => String -> IO(Result a)
-getFromFile filename = liftM decodeStrict (readFile filename)
+getFromFile :: FromJSON a => FilePath -> IO(Maybe (DataFile a))
+getFromFile = fmap decode . LBS.readFile
 
 
 -- |Open a file and write json to it
-writeToFile :: String -> JSValue -> IO()
-writeToFile filename = writeFile filename . JSON.encode
-
-
--- | parses file as JSON and returns internally used data structures
--- | convenience function
-deSerialize :: String -> Result ([Result Rule], [Result (Lesson String)])
-deSerialize = transformTypes . decodeStrict
-
-
--- |Turns parsed json values into the internally used datastructures.
-transformTypes :: Result JSValue -> Result ([Result Rule], [Result (Lesson String)])
-transformTypes (Ok (JSObject o))  = do
-    rv      <- valFromObj ruleKey o
-    lv      <- valFromObj lessonKey o
-
-    rules   <- extractRules rv
-    lessons <- extractLessons lv
-
-    return (rules, lessons)
-transformTypes (Ok _)             = Error "wrong value type"
-transformTypes (Error e)          = Error e
-
-
-serialize :: Show s => [MappedSchedule s] -> String
-serialize = JSON.encode . nativeToJson
-
-
--- |Transform Native the native schedules into JSON
-nativeToJson :: Show s => [MappedSchedule s] -> JSValue
-nativeToJson = JSArray . map convert
-  where
-    convert :: Show s => MappedSchedule s -> JSValue
-    convert =
-      pure (\a b -> JSObject (JSON.toJSObject [a,b]))
-        <*> ((,) "weight" . showJSON . totalWeight)
-        <*> ((,) "values" . JSArray .
-              map
-                (\((i, j), b) ->
-                  JSObject (JSON.toJSObject [
-                            ("day", showJSON i),
-                            ("slot", showJSON j),
-                            ("subject", (showJSON . show . subject) b)
-                          ]))
-                . Map.assocs
-              )
-
-
--- |Turns a parsed json value into a 'List' of 'Rule's or return an 'Error'
-extractRules :: JSValue -> Result [Result Rule]
-extractRules (JSArray rv)  = return $ map handleOne rv
-  where
-    handleOne :: JSValue -> Result Rule
-    handleOne (JSObject o)  = do
-      scope     <- valFromObj scopeKey o
-      severity  <- valFromObj severityKey o
-
-      let rp = (`Rule` severity)
-
-      case scope of
-        "day"   -> do
-          day   <- valFromObj ruleDayKey o
-          return $ rp $ Day day
-        "slot"  -> do
-          slot  <- valFromObj ruleSlotKey o
-          return $ rp $ Slot slot
-        "cell"  -> do
-          slot  <- valFromObj ruleSlotKey o
-          day   <- valFromObj ruleDayKey o
-          return $ rp $ Cell day slot
-
-    handleOne _             = Error "wrong value type"
-
-extractRules _             = Error "key lessons does not contain array"
-
-
--- |Turns a parsed json value into a 'List' of 'Lesson's or return an 'Error'
-extractLessons :: JSValue -> Result [Result (Lesson String)]
-extractLessons (JSArray a)  = return $ map handleOne a
-  where
-    handleOne :: JSValue -> Result (Lesson String)
-    handleOne (JSObject o)  = do
-      subject <- valFromObj subjectKey o
-      day     <- valFromObj lessonDayKey o
-      slot    <- valFromObj lessonSlotKey o
-      return $ Lesson slot day 0 subject
-    handleOne _             = Error "wrong type"
-
-extractLessons _            = Error "wrong value type"
+writeToFile :: ToJSON a => FilePath -> DataFile a -> IO()
+writeToFile filename = LBS.writeFile filename . encode
 
 
 shortSubject :: Show s => s -> String
@@ -155,10 +139,10 @@ shortSubject = reverse . take cellWidth . reverse . show
 
 {-|
   Transform a 'MappedSchedule' into a printable,
-  and more importantly, readable String
+  and more importantly, readable Text
 -}
-formatSchedule :: Show s => MappedSchedule s -> String
-formatSchedule hours = intercalate "\n" $ header : map formatDay allHours
+formatSchedule :: Show s => MappedSchedule s -> Text
+formatSchedule hours = pack $ List.intercalate "\n" $ header : map formatDay allHours
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
@@ -167,6 +151,6 @@ formatSchedule hours = intercalate "\n" $ header : map formatDay allHours
       printf ("%" ++ show cellWidth ++ "v") $ maybe [] (shortSubject . subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
-    formatDay (i, l) = intercalate " | " [formatLesson (j, i) | j <- l]
+    formatDay (i, l) = List.intercalate " | " [formatLesson (j, i) | j <- l]
 
     header = printf "Total Weight: %10v" (totalWeight hours)
