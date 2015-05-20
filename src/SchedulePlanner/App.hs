@@ -8,14 +8,14 @@ module SchedulePlanner.App (
 
 import           Control.Applicative        (pure, (<*>))
 import           Control.Monad.Writer
-import           Data.Aeson                 (ToJSON, decode, encode)
-import           Data.ByteString.Lazy       (toStrict)
+import           Data.Aeson                 (ToJSON, decode, encode, decodeStrict)
+import           Data.ByteString.Lazy       as LBS (toStrict)
 import qualified Data.List                  as List (take)
-import qualified Data.Map                   as Map (keys)
+import qualified Data.Map                   as Map (keys, elems)
 import           Data.Maybe                 (fromMaybe)
 import           Data.Text                  as T (Text, append, pack)
-import qualified Data.Text.Encoding         (decodeUtf8)
-import           Data.Text.IO               as TIO (hPutStrLn)
+import qualified Data.Text.Encoding         (decodeUtf8, encodeUtf8)
+import           Data.Text.IO               as TIO (hPutStrLn, putStrLn)
 import           SchedulePlanner.Calculator
 import           SchedulePlanner.Serialize
 import           System.IO                  (hPutStrLn, stderr)
@@ -36,9 +36,9 @@ printDebug debugMode = when debugMode . tell . pack . show
   Evaluates the transformed json, compiles (useful) error messages, prints them
   and then runs the algorithm or, if the errors are too severe, aborts.
 -}
-reportAndExecute :: (Show a, Ord a, ToJSON a) => Text -> Bool -> Maybe (DataFile a) -> Writer Text ()
+reportAndExecute :: Text -> Bool -> Maybe DataFile -> Writer Text ()
 reportAndExecute _ _ (Nothing)    =
-  tell $ "Stopped execution due to a severe problem with the input data:"
+  tell "Stopped execution due to a severe problem with the input data:"
 reportAndExecute outputFormat debugMode (Just (DataFile rules lessons))  = do
   let weighted      = weigh rules lessons
 
@@ -72,7 +72,7 @@ reportAndExecute outputFormat debugMode (Just (DataFile rules lessons))  = do
           return ()
 
         "json" -> do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode calculated
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concat $ map Map.elems calculated
           return ()
 
   where
@@ -81,4 +81,4 @@ reportAndExecute outputFormat debugMode (Just (DataFile rules lessons))  = do
 
 reportAndPrint :: Text -> Bool -> Text -> IO()
 reportAndPrint outputFormat debugMode rawInput =
-  putStrLn $ snd $ runWriter $ reportAndExecute outputFormat debugMode (decode rawInput)
+  TIO.putStrLn $ snd $ runWriter $ reportAndExecute outputFormat debugMode $ decodeStrict $ Data.Text.Encoding.encodeUtf8 rawInput

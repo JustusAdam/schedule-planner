@@ -33,34 +33,34 @@ import           Text.Printf                (printf)
 
 
 -- |Key for the rules data in the json input
-ruleKey       = "rules"
+ruleKey       = "rules"     :: Text
 -- |Key for the lesson data in the json input
-lessonKey     = "lessons"
+lessonKey     = "lessons"   :: Text
 -- |Key for the scope property in Rule objects in the json input
-scopeKey      = "scope"
+scopeKey      = "scope"     :: Text
 -- |Key for the severity property in Rule objects in the json input
-severityKey   = "severity"
+severityKey   = "severity"  :: Text
 -- |Key for the day property in Rule objects in the json input
-ruleDayKey    = "day"
+ruleDayKey    = "day"       :: Text
 -- |Key for the slot property in Rule objects in the json input
-ruleSlotKey   = "slot"
+ruleSlotKey   = "slot"      :: Text
 -- |Key for the subject property in Lesson objects in the json input
-subjectKey    = "subject"
+subjectKey    = "subject"   :: Text
 -- |Key for the day property in Lesson objects in the json input
-lessonDayKey  = "day"
+lessonDayKey  = "day"       :: Text
 -- |Key for the slot property in Rule objects in the json input
-lessonSlotKey = "slot"
+lessonSlotKey = "slot"      :: Text
 
 
 -- |How many days a week has
-daysPerWeek   = 7
+daysPerWeek   = 7           :: Int
 -- |The amount of imeslots each day
-slotsPerDay   = 7
+slotsPerDay   = 7           :: Int
 -- |The caracter width of a single slot in output
-cellWidth     = 20
+cellWidth     = 20          :: Int
 
 
-data DataFile a = DataFile [Rule] [Lesson a]
+data DataFile = DataFile [Rule] [Lesson Text]
 
 
 instance FromJSON a => FromJSON (Lesson a) where
@@ -75,9 +75,9 @@ instance FromJSON a => FromJSON (Lesson a) where
 instance ToJSON a => ToJSON (Lesson a) where
   toJSON =
     object . sequenceA
-      [ ((.=) lessonSlotKey . timeslot)
-      , ((.=) lessonDayKey  . day)
-      , ((.=) subjectKey    . subject)
+      [ (.=) lessonSlotKey . timeslot
+      , (.=) lessonDayKey  . day
+      , (.=) subjectKey    . subject
       ]
 
 
@@ -96,7 +96,7 @@ instance ToJSON Rule where
 instance FromJSON Rule where
   parseJSON (Object o) =
     pure Rule
-      <*> ((o .: scopeKey) >>= (fromScope o))
+      <*> ((o .: scopeKey) >>= fromScope o)
       <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
@@ -106,13 +106,13 @@ instance FromJSON Rule where
       fromScope _ _      = error "unknown input"  -- I am so sorry
 
 
-instance FromJSON a => FromJSON (DataFile a) where
+instance FromJSON DataFile where
   parseJSON (Object o) =
     pure DataFile
       <*> o .: lessonKey
       <*> o .: ruleKey
 
-instance ToJSON a => ToJSON (DataFile a) where
+instance ToJSON DataFile where
   toJSON (DataFile r l) =
     object
       [ lessonKey .= l
@@ -120,17 +120,18 @@ instance ToJSON a => ToJSON (DataFile a) where
       ]
 
 
-instance ToJSON a => ToJSON (Map.Map Text a) where
-  toJSON = object . map (uncurry (.=)) . Map.toList
+-- |Convert a suitable Map to a JSON Value
+mapToJSON :: ToJSON a => Map.Map Text a -> Value
+mapToJSON = object . map (uncurry (.=)) . Map.toList
 
 -- |Open a file and return the contents as parsed json
-getFromFile :: FromJSON a => FilePath -> IO(Maybe (DataFile a))
+getFromFile :: FilePath -> IO(Maybe DataFile)
 getFromFile = fmap decode . LBS.readFile
 
 
 -- |Open a file and write json to it
-writeToFile :: ToJSON a => FilePath -> DataFile a -> IO()
-writeToFile filename = LBS.writeFile filename . encode
+writeToFile :: ToJSON a => FilePath -> Map.Map Text a -> IO()
+writeToFile filename = LBS.writeFile filename . encode . mapToJSON
 
 
 shortSubject :: Show s => s -> String

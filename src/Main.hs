@@ -14,24 +14,24 @@ as well as providing useful feedback upon encountering errors.
 module Main (main, CallOptions) where
 
 import           Control.Applicative        (pure, (<*>))
-import           Control.Monad              (liftM, when)
+import           Data.Text                  (pack)
+import           Data.Text.IO               (readFile)
 import           Options                    (Options, defineOption,
                                              defineOptions, optionDefault,
                                              optionDescription, optionLongFlags,
                                              optionShortFlags, optionType_bool,
                                              optionType_maybe,
                                              optionType_string, runCommand)
+import           Prelude                    hiding (readFile)
 import           SchedulePlanner.App
-import           SchedulePlanner.Calculator
-import           SchedulePlanner.Serialize
 
 
 -- |Temporary constant, should be in call args eventually
-outputFormatDefault = "print"
+outputFormatDefault = "print" :: String
 
 
 -- |Legacy hard coded name of inputfile
-stdFileName   = "testsuite/test.json"
+stdFileName   = "testsuite/test.json" :: String
 
 
 data CallOptions = CallOptions { outputFile   :: Maybe String
@@ -84,6 +84,6 @@ instance Options CallOptions where
   and starts execution.
 -}
 main :: IO()
-main = runCommand $ (\opts args ->
+main = runCommand $ \opts args ->
   readFile (inputFile opts) >>=
-  reportAndPrint (outputFormat opts) (verbocity opts))
+  reportAndPrint (pack $ outputFormat opts) (verbocity opts)
