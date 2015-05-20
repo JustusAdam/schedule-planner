@@ -19,20 +19,18 @@ module SchedulePlanner.Calculator.Solver (
   totalWeight,
   time,
   Lesson (..),
-  Timeslot (..),
+  Timeslot,
   MappedSchedule,
   MappedLessons
   ) where
 
-import           Control.Applicative (pure, (<*>))
-import           Data.Data           (Data)
-import           Data.List           as List (sortBy, take)
-import qualified Data.Map            as Map (Map, empty, foldl, fromList,
-                                             fromListWith, insert, keys, lookup,
-                                             map, null, toList)
-import           Data.Maybe          (fromMaybe)
-import qualified Data.Ord            as Ord (comparing)
-import           Data.Typeable       (Typeable)
+import           Data.Data     (Data)
+import           Data.List     as List (sortBy)
+import qualified Data.Map      as Map (Map, empty, foldl, fromListWith, insert,
+                                       keys, lookup, map, null)
+import           Data.Maybe    (fromMaybe)
+import qualified Data.Ord      as Ord (comparing)
+import           Data.Typeable (Typeable)
 
 
 -- |Base datastructure for representing lessons
@@ -121,9 +119,9 @@ calc' x lists hourMap minList =
     newMap = Map.insert (time x) x hourMap
 
     reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
-    reduceLists s lists schedules subjects = Map.lookup s lists >>=
+    reduceLists s mappedLessons schedules subjects = Map.lookup s mappedLessons >>=
       (\l ->
         case l of
           []        -> Nothing
-          (c : cs)  -> calc' c (Map.insert s cs lists) schedules subjects
+          (c : cs)  -> calc' c (Map.insert s cs mappedLessons) schedules subjects
       )

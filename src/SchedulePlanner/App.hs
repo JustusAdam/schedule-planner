@@ -6,25 +6,15 @@ module SchedulePlanner.App (
   ) where
 
 
-import           Control.Applicative        (pure, (<*>))
 import           Control.Monad.Writer
-import           Data.Aeson                 (ToJSON, decode, encode, decodeStrict)
+import           Data.Aeson                 (encode, decodeStrict)
 import           Data.ByteString.Lazy       as LBS (toStrict)
-import qualified Data.List                  as List (take)
 import qualified Data.Map                   as Map (keys, elems)
-import           Data.Maybe                 (fromMaybe)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8, encodeUtf8)
-import           Data.Text.IO               as TIO (hPutStrLn, putStrLn)
+import           Data.Text.IO               as TIO (putStrLn)
 import           SchedulePlanner.Calculator
 import           SchedulePlanner.Serialize
-import           System.IO                  (hPutStrLn, stderr)
-
-
-
--- |Print a line to stdout
-putErrorLine :: Text -> IO()
-putErrorLine = TIO.hPutStrLn stderr
 
 
 -- |Print a string if debug is enabled
@@ -72,8 +62,10 @@ reportAndExecute outputFormat debugMode (Just (DataFile rules lessons))  = do
           return ()
 
         "json" -> do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concat $ map Map.elems calculated
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap Map.elems calculated
           return ()
+
+        _ -> tell "invalid output format"
 
   where
     pc = mapM (tell . append "\n\n" . formatSchedule)

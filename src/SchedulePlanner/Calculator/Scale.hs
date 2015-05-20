@@ -17,15 +17,13 @@ module SchedulePlanner.Calculator.Scale (
   calcMaps
 ) where
 
-import           Control.Applicative               (pure, (<*>))
 import           Control.Monad.Trans.State         (State, get, put, runState)
 import           Data.Data                         (Data)
 import           Data.List                         as List (mapAccumL)
 import qualified Data.Map                          as Map (Map, empty,
                                                            findWithDefault,
                                                            insert, insertWith,
-                                                           lookup, update)
-import           Data.Tuple                        (swap)
+                                                           lookup)
 import           Data.Typeable                     (Typeable)
 import           SchedulePlanner.Calculator.Solver (Lesson (..), time, timeslot)
 
@@ -51,8 +49,8 @@ class DynamicRule a where
 
 
 instance DynamicRule SimpleDynRule where
-  trigger inserted wMap (SimpleDynRule target sev) =
-    (Map.insertWith (+) target sev wMap, SimpleDynRule target sev)
+  trigger inserted wMap (SimpleDynRule targ sev) =
+    (Map.insertWith (+) targ sev wMap, SimpleDynRule targ sev)
 
   getTriggerTarget = return.sDynTarget
 
@@ -81,16 +79,6 @@ reCalcHelper inserted key rMap =
       let (newState, newRules) = mapAccumL (trigger inserted) s rules
       put newState
       return $ Map.insert key newRules rMap
-
-
--- |Apply a function to only the first element of a 2-tuple
-applyToFirst :: (a -> c) -> (a, b) -> (c, b)
-applyToFirst f (x, y) = (f x, y)
-
-
--- |Apply a function to only the second element of a 2-tuple
-applyToSecond :: (b -> c) -> (a, b) -> (a, c)
-applyToSecond f (x, y) = (x, f y)
 
 
 {-|

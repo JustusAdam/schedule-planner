@@ -15,7 +15,7 @@ module SchedulePlanner.Calculator(
   calcFromList,
   totalWeight,
   Lesson (..),
-  Timeslot (..),
+  Timeslot,
   Target(..),
   Rule(..),
   mapToSubject,

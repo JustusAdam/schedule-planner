@@ -13,7 +13,6 @@ as well as providing useful feedback upon encountering errors.
 -}
 module Main (main, CallOptions) where
 
-import           Control.Applicative        (pure, (<*>))
 import           Data.Text                  (pack)
 import           Data.Text.IO               (readFile)
 import           Options                    (Options, defineOption,
@@ -26,12 +25,13 @@ import           Prelude                    hiding (readFile)
 import           SchedulePlanner.App
 
 
+stdFileName :: String
+stdFileName = "testsuite/test.json"
+
+
 -- |Temporary constant, should be in call args eventually
-outputFormatDefault = "print" :: String
-
-
--- |Legacy hard coded name of inputfile
-stdFileName   = "testsuite/test.json" :: String
+outputFormatDefault :: String
+outputFormatDefault = "print"
 
 
 data CallOptions = CallOptions { outputFile   :: Maybe String

@@ -12,52 +12,59 @@ Hold the capeablilities to get and export in- and output data as well as (de)ser
 -}
 module SchedulePlanner.Serialize where
 
-import           Control.Applicative        (pure, (<*>))
 import           Control.Arrow              as Arrow (first)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
                                              Value (Object), decode, encode,
                                              object, parseJSON, toJSON, (.:),
                                              (.=))
 import           Data.Aeson.Types           (Parser)
-import qualified Data.ByteString            as BS (readFile, writeFile)
 import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import           Data.List                  as List (intercalate)
-import qualified Data.Map                   as Map (Map, assocs, lookup, toList)
-import           Data.String                (IsString)
-import           Data.Text                  as T (Text, append, intercalate,
-                                                  pack)
-import           Data.Traversable           (sequenceA)
+import qualified Data.Map                   as Map (Map, lookup, toList)
+import           Data.Text                  as T (Text, pack)
 import           SchedulePlanner.Calculator
 import           Text.Printf                (printf)
 
 
 
 -- |Key for the rules data in the json input
-ruleKey       = "rules"     :: Text
+ruleKey       :: Text
+ruleKey       = "rules"
 -- |Key for the lesson data in the json input
-lessonKey     = "lessons"   :: Text
+lessonKey     :: Text
+lessonKey     = "lessons"
 -- |Key for the scope property in Rule objects in the json input
-scopeKey      = "scope"     :: Text
+scopeKey      :: Text
+scopeKey      = "scope"
 -- |Key for the severity property in Rule objects in the json input
-severityKey   = "severity"  :: Text
+severityKey   :: Text
+severityKey   = "severity"
 -- |Key for the day property in Rule objects in the json input
-ruleDayKey    = "day"       :: Text
+ruleDayKey    :: Text
+ruleDayKey    = "day"
 -- |Key for the slot property in Rule objects in the json input
-ruleSlotKey   = "slot"      :: Text
+ruleSlotKey   :: Text
+ruleSlotKey   = "slot"
 -- |Key for the subject property in Lesson objects in the json input
-subjectKey    = "subject"   :: Text
+subjectKey    :: Text
+subjectKey    = "subject"
 -- |Key for the day property in Lesson objects in the json input
-lessonDayKey  = "day"       :: Text
+lessonDayKey  :: Text
+lessonDayKey  = "day"
 -- |Key for the slot property in Rule objects in the json input
-lessonSlotKey = "slot"      :: Text
+lessonSlotKey :: Text
+lessonSlotKey = "slot"
 
 
 -- |How many days a week has
-daysPerWeek   = 7           :: Int
+daysPerWeek   :: Int
+daysPerWeek   = 7
 -- |The amount of imeslots each day
-slotsPerDay   = 7           :: Int
+slotsPerDay   :: Int
+slotsPerDay   = 7
 -- |The caracter width of a single slot in output
-cellWidth     = 20          :: Int
+cellWidth     :: Int
+cellWidth     = 20
 
 
 data DataFile = DataFile [Rule] [Lesson Text]
@@ -100,9 +107,9 @@ instance FromJSON Rule where
       <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
-      fromScope o "day"  = fmap Day (o .: ruleDayKey)
-      fromScope o "slot" = fmap Slot (o .: ruleSlotKey)
-      fromScope o "cell" = pure Cell <*> o .: ruleSlotKey <*> o .: ruleDayKey
+      fromScope obj "day"  = fmap Day (obj .: ruleDayKey)
+      fromScope obj "slot" = fmap Slot (obj .: ruleSlotKey)
+      fromScope obj "cell" = pure Cell <*> obj .: ruleSlotKey <*> obj .: ruleDayKey
       fromScope _ _      = error "unknown input"  -- I am so sorry
 
 
