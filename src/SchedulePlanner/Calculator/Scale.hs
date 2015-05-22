@@ -40,7 +40,7 @@ data SimpleDynRule  = SimpleDynRule {sDynTarget :: Target, sDynSeverity :: Int} 
 -- |Type alias for more expressive function signature
 type WeightMap   = Map.Map Target Int
 -- |Type alias for structure holding the dynamic rules
-type DynRuleMap  = Map.Map Target [SimpleDynRule]
+type DynRuleMap a  = Map.Map Target [a]
 
 
 -- |Scaffolding for a dynamic rule
@@ -57,18 +57,18 @@ instance DynamicRule SimpleDynRule where
 
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: Lesson s -> DynRuleMap -> WeightMap -> (DynRuleMap, WeightMap)
+reCalcMaps :: DynamicRule a => Lesson s -> DynRuleMap a -> WeightMap -> (DynRuleMap a, WeightMap)
 reCalcMaps lesson = runState .
   (reCalcHelper lesson (Slot (timeslot lesson)) >=>
     reCalcHelper lesson (Day (day lesson)) >=>
       reCalcHelper lesson (uncurry Cell (time lesson)))
 
 
-reCalcHelper :: Ord k
+reCalcHelper :: (DynamicRule a, Ord k)
     => Lesson s
     -> k
-    -> Map.Map k [SimpleDynRule]
-    -> State WeightMap (Map.Map k [SimpleDynRule])
+    -> (Map.Map k [a])
+    -> State WeightMap (Map.Map k [a])
 reCalcHelper inserted key =
   pure maybe
     <*> return

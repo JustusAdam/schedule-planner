@@ -125,7 +125,7 @@ calc' x lists hourMap minList =
   where
     maybeEnd = maybe
                 (return [newMap])
-                (\(c, cs)  -> reduceLists c lists newMap cs)
+                (\(c, cs) -> reduceLists c lists newMap cs)
                 (uncons minList)
 
     sideCalc element aMap = fromMaybe [] (reduceLists (subject element) lists aMap minList)
