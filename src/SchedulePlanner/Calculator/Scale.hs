@@ -10,11 +10,11 @@ Portability : POSIX
 
 This module is used to weigh a list of lessons according to rules.
 -}
-module SchedulePlanner.Calculator.Scale (
-  weigh,
-  Rule(..),
-  Target(..),
-  calcMaps
+module SchedulePlanner.Calculator.Scale
+  ( weigh
+  , Rule(..)
+  , Target(..)
+  , calcMaps
 ) where
 
 import           Control.Monad                     ((>=>))

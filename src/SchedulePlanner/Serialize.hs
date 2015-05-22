@@ -10,7 +10,12 @@ Portability : POSIX
 
 Hold the capeablilities to get and export in- and output data as well as (de)serialize it
 -}
-module SchedulePlanner.Serialize where
+module SchedulePlanner.Serialize
+  ( mapToJSON
+  , formatSchedule
+  , shortSubject
+  , DataFile(DataFile)
+  ) where
 
 import           Control.Arrow              as Arrow (first)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
@@ -22,7 +27,9 @@ import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, lookup, toList)
 import           Data.Text                  as T (Text, pack)
-import           SchedulePlanner.Calculator
+import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
+                                             Rule (..), Target (..), Timeslot,
+                                             timeslot, totalWeight)
 import           Text.Printf                (printf)
 
 

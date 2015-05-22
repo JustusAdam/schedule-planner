@@ -10,17 +10,17 @@ Portability : POSIX
 Exports the most important functions neccessary for the actual work
 of this software
 -}
-module SchedulePlanner.Calculator(
-  calcFromMap,
-  calcFromList,
-  totalWeight,
-  Lesson (..),
-  Timeslot,
-  Target(..),
-  Rule(..),
-  mapToSubject,
-  MappedSchedule,
-  weigh
+module SchedulePlanner.Calculator
+  ( calcFromMap
+  , calcFromList
+  , totalWeight
+  , Lesson (..)
+  , Timeslot
+  , Target(..)
+  , Rule(..)
+  , mapToSubject
+  , MappedSchedule
+  , weigh
 ) where
 
 import SchedulePlanner.Calculator.Scale

@@ -1,20 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module SchedulePlanner.App (
-  reportAndPrint,
-  reportAndExecute
+module SchedulePlanner.App
+  ( reportAndPrint
+  , reportAndExecute
   ) where
 
 
-import           Control.Monad.Writer
-import           Data.Aeson                 (encode, decodeStrict)
+import           Control.Monad.Writer       (Writer, runWriter, tell, when)
+import           Data.Aeson                 (decodeStrict, encode)
 import           Data.ByteString.Lazy       as LBS (toStrict)
-import qualified Data.Map                   as Map (keys, elems)
+import qualified Data.Map                   as Map (elems, keys)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8, encodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn)
-import           SchedulePlanner.Calculator
-import           SchedulePlanner.Serialize
+import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh)
+import           SchedulePlanner.Serialize  (DataFile (DataFile),
+                                             formatSchedule, shortSubject)
 
 
 -- |Print a string if debug is enabled

@@ -11,7 +11,10 @@ main function and outside communication for this software.
 This module takes care of reading all input and checking for correctness
 as well as providing useful feedback upon encountering errors.
 -}
-module Main (main, CallOptions) where
+module Main
+  ( main
+  , CallOptions
+  ) where
 
 import           Data.Text                  (pack)
 import           Data.Text.IO               (readFile)
@@ -22,7 +25,7 @@ import           Options                    (Options, defineOption,
                                              optionType_maybe,
                                              optionType_string, runCommand)
 import           Prelude                    hiding (readFile)
-import           SchedulePlanner.App
+import           SchedulePlanner.App        (reportAndPrint)
 
 
 stdFileName :: String
