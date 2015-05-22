@@ -28,7 +28,8 @@ executable schedule-planner
     happstack-lite >= 7,
     mtl >= 1,
     bytestring >= 0.10,
-    text >= 1.2
+    text >= 1.2,
+    blaze-html
   main-is: Main.hs
   buildable: True
   other-modules:
