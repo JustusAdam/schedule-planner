@@ -15,6 +15,7 @@ module SchedulePlanner.Calculator.Scale
   , Rule(..)
   , Target(..)
   , calcMaps
+  , WeightMap
 ) where
 
 import           Control.Monad                     ((>=>))

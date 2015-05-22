@@ -1,5 +1,16 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-|
+Module      : $Header$
+Description : functions necessary for deploying the application as a webservice
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
+
+Uses happstack and blaze to create a deployable service instance of this software. 
+-}
 module SchedulePlanner.Server () where
 
 import           Control.Applicative         (optional, (<$>))

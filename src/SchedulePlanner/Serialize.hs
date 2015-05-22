@@ -74,6 +74,7 @@ cellWidth     :: Int
 cellWidth     = 20
 
 
+-- |Base structure of the input JSON file
 data DataFile = DataFile [Rule] [Lesson Text]
 
 
@@ -148,6 +149,7 @@ writeToFile :: ToJSON a => FilePath -> Map.Map Text a -> IO()
 writeToFile filename = LBS.writeFile filename . encode . mapToJSON
 
 
+-- |Shorten a subject to something printable
 shortSubject :: Show s => s -> String
 shortSubject = reverse . take cellWidth . reverse . show
 

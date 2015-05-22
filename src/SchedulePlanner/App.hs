@@ -1,5 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+Module      : $Header$
+Description : Connector from IO to logic
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
 
+Sort of the Main script for all the common operations, independant of the
+program instance (webservice, command line)
+-}
 module SchedulePlanner.App
   ( reportAndPrint
   , reportAndExecute
@@ -24,8 +35,8 @@ printDebug debugMode = when debugMode . tell . pack . show
 
 
 {-|
-  Evaluates the transformed json, compiles (useful) error messages, prints them
-  and then runs the algorithm or, if the errors are too severe, aborts.
+  Evaluates the transformed json, compiles (useful) error messages, runs the algorithm
+  and returns a writer of any output created.
 -}
 reportAndExecute :: Text -> Bool -> DataFile -> Writer Text ()
 reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
@@ -70,6 +81,9 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
     pc = mapM (tell . append "\n\n" . formatSchedule)
 
 
+{-|
+  perform the calculation and print the result to the command line
+-}
 reportAndPrint :: Text -> Bool -> Text -> IO()
 reportAndPrint outputFormat debugMode =
   TIO.putStrLn . maybe

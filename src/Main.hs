@@ -36,7 +36,7 @@ stdFileName = "testsuite/test.json"
 outputFormatDefault :: String
 outputFormatDefault = "print"
 
-
+-- |Command line options to choose from 
 data CallOptions = CallOptions { outputFile   :: Maybe String
                                , inputFile    :: String
                                , outputFormat :: String
