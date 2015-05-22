@@ -25,7 +25,7 @@ module SchedulePlanner.Calculator.Solver (
   ) where
 
 import           Data.Data     (Data)
-import           Data.List     as List (sortBy)
+import           Data.List     as List (sortBy, uncons)
 import qualified Data.Map      as Map (Map, empty, foldl, fromListWith, insert,
                                        keys, lookup, map, null)
 import           Data.Maybe    (fromMaybe)
@@ -67,7 +67,7 @@ totalWeight = Map.foldl (+) 0 . Map.map weight
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: Ord s => [Lesson s] -> Map.Map s [Lesson s]
-mapToSubject = Map.fromListWith (++) . map (\x -> (subject x, [x]))
+mapToSubject = Map.fromListWith (++) . map (pure (,) <*> subject <*> (:[]))
 
 
 {-|
@@ -75,6 +75,13 @@ mapToSubject = Map.fromListWith (++) . map (\x -> (subject x, [x]))
 -}
 calcFromList :: Ord s => [Lesson s] -> Maybe [MappedSchedule s]
 calcFromList = calcFromMap.mapToSubject
+
+
+{-|
+  Like 'head' but does not throw errors
+-}
+maybeFirst :: [a] -> Maybe a
+maybeFirst = fmap fst . uncons
 
 
 {-|
@@ -86,13 +93,20 @@ calcFromList = calcFromMap.mapToSubject
 calcFromMap :: Ord s => Map.Map s [Lesson s] -> Maybe [MappedSchedule s]
 calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
-  | otherwise               = Map.lookup subjX sortedLessons >>=
-    (\(x : xs) ->
-      calc' x (Map.insert subjX xs sortedLessons) Map.empty minList
-    )
+  | otherwise               = reduceLists subjX sortedLessons Map.empty minList
   where
     sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList)   = Map.keys sortedLessons
+
+
+{-|
+  One of the essential calculation steps, reducing the subject lists and
+  recursing the calculation
+-}
+reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
+reduceLists s mappedLessons schedules subjects =
+  Map.lookup s mappedLessons >>= uncons >>=
+    \(c, cs)  -> calc' c (Map.insert s cs mappedLessons) schedules subjects
 
 
 {-|
@@ -101,27 +115,21 @@ calcFromMap mappedLessons
 -}
 calc' :: Ord s => Lesson s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
 calc' x lists hourMap minList =
-  case Map.lookup (time x) hourMap of
 
-    Nothing   ->
-      case minList of
-        []        -> return [newMap]
-        (c : cs)  -> Map.lookup c lists >>=
-          (\(l : ls) -> calc' l (Map.insert c ls lists) newMap cs)
+  maybe
+    maybeEnd
+    splitCalc
+    (Map.lookup (time x) hourMap)
 
-    Just old  ->
-      return $ r1 ++ r2
-      where
-        r1 = fromMaybe [] $ reduceLists (subject x)   lists hourMap minList
-        r2 = fromMaybe [] $ reduceLists (subject old) lists newMap  minList
 
   where
-    newMap = Map.insert (time x) x hourMap
+    maybeEnd = maybe
+                (return [newMap])
+                (\(c, cs)  -> reduceLists c lists newMap cs)
+                (uncons minList)
 
-    reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
-    reduceLists s mappedLessons schedules subjects = Map.lookup s mappedLessons >>=
-      (\l ->
-        case l of
-          []        -> Nothing
-          (c : cs)  -> calc' c (Map.insert s cs mappedLessons) schedules subjects
-      )
+    sideCalc element aMap = fromMaybe [] (reduceLists (subject element) lists aMap minList)
+
+    splitCalc old = return $ sideCalc x hourMap ++ sideCalc old newMap
+
+    newMap = Map.insert (time x) x hourMap

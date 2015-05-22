@@ -95,8 +95,8 @@ instance ToJSON Rule where
       <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
     where
       getTarget :: Target -> (Text, [(Text, Value)])
-      getTarget (Day d)    = ("day", [ruleDayKey .= d])
-      getTarget (Cell d s) = ("cell", [ruleDayKey .= d, ruleSlotKey .= s])
+      getTarget (Day d)    = ("day",   [ruleDayKey  .= d])
+      getTarget (Cell d s) = ("cell",  [ruleDayKey  .= d, ruleSlotKey .= s])
       getTarget (Slot s)   = ("slot",  [ruleSlotKey .= s])
 
 
@@ -107,10 +107,10 @@ instance FromJSON Rule where
       <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
-      fromScope obj "day"  = fmap Day (obj .: ruleDayKey)
-      fromScope obj "slot" = fmap Slot (obj .: ruleSlotKey)
+      fromScope obj "day"  = Day  <$> (obj .: ruleDayKey)
+      fromScope obj "slot" = Slot <$> (obj .: ruleSlotKey)
       fromScope obj "cell" = pure Cell <*> obj .: ruleSlotKey <*> obj .: ruleDayKey
-      fromScope _ _      = error "unknown input"  -- I am so sorry
+      fromScope _ _        = error "unknown input"  -- I am so sorry
 
 
 instance FromJSON DataFile where

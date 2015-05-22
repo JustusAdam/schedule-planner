@@ -17,6 +17,7 @@ module SchedulePlanner.Calculator.Scale (
   calcMaps
 ) where
 
+import           Control.Monad                     ((>=>))
 import           Control.Monad.Trans.State         (State, get, put, runState)
 import           Data.Data                         (Data)
 import           Data.List                         as List (mapAccumL)
@@ -56,14 +57,11 @@ instance DynamicRule SimpleDynRule where
 
 
 -- |Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: WeightMap -> Lesson s -> DynRuleMap -> (DynRuleMap, WeightMap)
-reCalcMaps weightMap lesson rules = runState (
-
-  reCalcHelper lesson (Slot (timeslot lesson)) rules >>=
-    reCalcHelper lesson (Day (day lesson)) >>=
-      reCalcHelper lesson (uncurry Cell (time lesson))
-
-  ) weightMap
+reCalcMaps :: Lesson s -> DynRuleMap -> WeightMap -> (DynRuleMap, WeightMap)
+reCalcMaps lesson = runState .
+  (reCalcHelper lesson (Slot (timeslot lesson)) >=>
+    reCalcHelper lesson (Day (day lesson)) >=>
+      reCalcHelper lesson (uncurry Cell (time lesson)))
 
 
 reCalcHelper :: Ord k
@@ -71,14 +69,15 @@ reCalcHelper :: Ord k
     -> k
     -> Map.Map k [SimpleDynRule]
     -> State WeightMap (Map.Map k [SimpleDynRule])
-reCalcHelper inserted key rMap =
-  case Map.lookup key rMap of
-    Nothing     -> return rMap
-    Just rules  -> do
-      s <- get
-      let (newState, newRules) = mapAccumL (trigger inserted) s rules
-      put newState
-      return $ Map.insert key newRules rMap
+reCalcHelper inserted key =
+  pure maybe
+    <*> return
+    <*> (\rMap rules -> do
+            s <- get
+            let (newState, newRules) = mapAccumL (trigger inserted) s rules
+            put newState
+            return $ Map.insert key newRules rMap)
+    <*> Map.lookup key
 
 
 {-|
@@ -91,7 +90,7 @@ reCalcHelper inserted key rMap =
   component which is the old weight + the weight calculated from the rules
 -}
 weigh :: [Rule] -> [Lesson s] -> [Lesson s]
-weigh rs = map (weighOne (calcMaps rs))
+weigh = map . weighOne . calcMaps
 
 
 {-|
@@ -104,7 +103,7 @@ weighOne wm l =
 
 
 allTargeting :: Lesson s -> WeightMap -> Int
-allTargeting l = pure (\a b c -> a + b + c)
+allTargeting l = pure (((+) .) . (+))
   <*> Map.findWithDefault 0 (Slot $ timeslot l)
   <*> Map.findWithDefault 0 (Day $ day l)
   <*> Map.findWithDefault 0 (uncurry Cell $ time l)
@@ -116,7 +115,7 @@ allTargeting l = pure (\a b c -> a + b + c)
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMap
-calcMaps = (`calcMapsStep` Map.empty)
+calcMaps = (flip calcMapsStep Map.empty)
 
 
 {-|
