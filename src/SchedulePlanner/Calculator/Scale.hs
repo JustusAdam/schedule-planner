@@ -67,7 +67,7 @@ reCalcMaps lesson = runState .
 reCalcHelper :: (DynamicRule a, Ord k)
     => Lesson s
     -> k
-    -> (Map.Map k [a])
+    -> Map.Map k [a]
     -> State WeightMap (Map.Map k [a])
 reCalcHelper inserted key =
   pure maybe
@@ -115,7 +115,7 @@ allTargeting l = pure (((+) .) . (+))
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMap
-calcMaps = (flip calcMapsStep Map.empty)
+calcMaps = flip calcMapsStep Map.empty
 
 
 {-|
