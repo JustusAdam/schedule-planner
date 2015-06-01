@@ -15,13 +15,14 @@ module SchedulePlanner.Serialize
   , formatSchedule
   , shortSubject
   , DataFile(DataFile)
+  , eitherDecode
   ) where
 
 import           Control.Arrow              as Arrow (first)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
                                              Value (Object), decode, encode,
                                              object, parseJSON, toJSON, (.:),
-                                             (.=))
+                                             (.=), eitherDecode)
 import           Data.Aeson.Types           (Parser)
 import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import           Data.List                  as List (intercalate)
@@ -31,7 +32,6 @@ import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
                                              Rule (..), Target (..), Timeslot,
                                              timeslot, totalWeight)
 import           Text.Printf                (printf)
-import Debug.Trace (trace, traceShow)
 
 
 
@@ -73,10 +73,6 @@ slotsPerDay   = 7
 -- |The caracter width of a single slot in output
 cellWidth     :: Int
 cellWidth     = 20
-
-
-both :: (a -> a -> b) -> a -> b
-both f i = f i i
 
 
 -- |Base structure of the input JSON file

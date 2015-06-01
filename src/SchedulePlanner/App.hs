@@ -14,6 +14,7 @@ program instance (webservice, command line)
 module SchedulePlanner.App
   ( reportAndPrint
   , reportAndExecute
+  , serverCalculation
   ) where
 
 
@@ -22,16 +23,36 @@ import           Data.Aeson                 (eitherDecode, encode)
 import           Data.ByteString.Lazy       as LBS (toStrict, ByteString)
 import qualified Data.Map                   as Map (elems, keys)
 import           Data.Text                  as T (Text, append, pack)
-import qualified Data.Text.Encoding         (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn)
-import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh)
+import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh, MappedSchedule)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
                                              formatSchedule, shortSubject)
+import Data.String (fromString)
 
 
 -- |Print a string if debug is enabled
 printDebug :: Show a => Bool -> a -> Writer Text ()
 printDebug debugMode = when debugMode . tell . pack . show
+
+
+calculate :: DataFile -> Maybe [MappedSchedule Text]
+calculate (DataFile rules lessons) =
+  let
+    weighted      = weigh rules lessons
+    mappedLessons = mapToSubject weighted
+  in calcFromMap mappedLessons
+
+
+serverCalculation :: ByteString -> ByteString
+serverCalculation =
+  either
+    (fromString . ("Error:" ++) . show )
+    (maybe
+      "\"No schedule could be calculated\""
+      (encode . concatMap Map.elems)
+    . calculate)
+  . eitherDecode
 
 
 {-|

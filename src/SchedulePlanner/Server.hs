@@ -9,18 +9,21 @@ Maintainer  : development@justusadam.com
 Stability   : experimental
 Portability : POSIX
 
-Uses happstack and blaze to create a deployable service instance of this software. 
+Uses happstack and blaze to create a deployable service instance of this software.
 -}
-module SchedulePlanner.Server () where
+module SchedulePlanner.Server (server, app) where
 
-import           Control.Applicative         (optional, (<$>))
-import           Data.Maybe                  (fromMaybe)
-import           Data.Text                   (Text)
-import           Data.Text.Lazy              (unpack)
-import           Happstack.Lite
-import           Text.Blaze.Html5            (Html, a, form, input, label, p,
-                                              toHtml, (!))
-import qualified Text.Blaze.Html5            as H
-import           Text.Blaze.Html5.Attributes (action, enctype, href, name, size,
-                                              type_, value)
-import qualified Text.Blaze.Html5.Attributes as A
+
+import Network.Wai.Handler.Warp (run)
+import Network.Wai (responseLBS, lazyRequestBody, Application)
+import Data.ByteString.Lazy (ByteString)
+import Network.HTTP.Types (status200)
+
+
+app :: (ByteString -> ByteString) -> Application
+app a request respond = do
+  body <- lazyRequestBody request
+  respond $ responseLBS status200 [] $ a body
+
+server :: Int -> (ByteString -> ByteString) -> IO ()
+server port = run port . app

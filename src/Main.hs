@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      : $Header$
 Description : Interface for schedule-planner
@@ -11,10 +12,8 @@ main function and outside communication for this software.
 This module takes care of reading all input and checking for correctness
 as well as providing useful feedback upon encountering errors.
 -}
-module Main
-  ( main
-  , CallOptions
-  ) where
+module Main (main) where
+
 
 import           Data.Text                  (pack)
 import           Data.ByteString.Lazy       (readFile)
@@ -22,10 +21,12 @@ import           Options                    (Options, defineOption,
                                              defineOptions, optionDefault,
                                              optionDescription, optionLongFlags,
                                              optionShortFlags, optionType_bool,
-                                             optionType_maybe,
-                                             optionType_string, runCommand)
+                                             optionType_maybe, optionType_int,
+                                             optionType_string, runSubcommand,
+                                             subcommand)
 import           Prelude                    hiding (readFile)
-import           SchedulePlanner.App        (reportAndPrint)
+import           SchedulePlanner.App        (reportAndPrint, serverCalculation)
+import qualified SchedulePlanner.Server     as Server (server)
 
 
 stdFileName :: String
@@ -36,18 +37,28 @@ stdFileName = "testsuite/test.json"
 outputFormatDefault :: String
 outputFormatDefault = "print"
 
+
+defaultServerPort :: Int
+defaultServerPort = 7097
+
+
+data CommonOptions = CommonOptions
+
+
+instance Options CommonOptions where
+  defineOptions = pure CommonOptions
+
 -- |Command line options to choose from
-data CallOptions = CallOptions { outputFile   :: Maybe String
-                               , inputFile    :: String
-                               , outputFormat :: String
-                               , server       :: Bool
-                               , verbocity    :: Bool
-                               } deriving (Show)
+data DirectCallOptions = DirectCallOptions { outputFile   :: Maybe String
+                                           , inputFile    :: String
+                                           , outputFormat :: String
+                                           , verbocity    :: Bool
+                                           } deriving (Show)
 
 
-instance Options CallOptions where
-  defineOptions = pure CallOptions
-    <*> defineOption
+instance Options DirectCallOptions where
+  defineOptions = DirectCallOptions
+    <$> defineOption
           (optionType_maybe optionType_string)
           (\o -> o { optionLongFlags   = ["output-file"]
                    , optionShortFlags  = "o"
@@ -71,15 +82,23 @@ instance Options CallOptions where
     <*> defineOption
           optionType_bool
           (\o -> o { optionDefault     = False
-                   , optionLongFlags   = ["serve"]
-                   , optionDescription = "Placeholder with no effect yet"
-                   })
-    <*> defineOption
-          optionType_bool
-          (\o -> o { optionDefault     = False
                    , optionLongFlags   = ["verbose"]
                    , optionShortFlags  = "v"
                    , optionDescription = "Print extra information"
+                   })
+
+
+data ServerOptions = ServerOptions { port :: Int }
+
+
+instance Options ServerOptions where
+  defineOptions = ServerOptions
+    <$> defineOption
+          optionType_int
+          (\o -> o { optionLongFlags   = ["port"]
+                   , optionShortFlags  = "p"
+                   , optionDescription = "The port to run the server on"
+                   , optionDefault     = defaultServerPort
                    })
 
 
@@ -88,6 +107,24 @@ instance Options CallOptions where
   and starts execution.
 -}
 main :: IO()
-main = runCommand $ \opts args ->
-  readFile (inputFile opts) >>=
-  reportAndPrint (pack $ outputFormat opts) (verbocity opts)
+main =
+  runSubcommand
+    [ subcommand "calc" directCall
+    , subcommand "serve" serverMain
+    ]
+
+directCall :: CommonOptions -> DirectCallOptions -> [String] -> IO ()
+directCall
+  _
+  ( DirectCallOptions
+      { inputFile = ifile
+      , outputFormat = outForm
+      , verbocity = v
+      })
+  _
+  = readFile ifile >>=
+        reportAndPrint (pack outForm) v
+
+
+serverMain :: CommonOptions -> ServerOptions -> [String] -> IO ()
+serverMain _ (ServerOptions { port = p }) _ = Server.server p serverCalculation

@@ -25,11 +25,12 @@ executable schedule-planner
     aeson >= 0.8,
     options >= 1.2,
     transformers >= 0.4,
-    happstack-lite >= 7,
-    mtl >= 1,
     bytestring >= 0.10,
     text >= 1.2,
-    blaze-html
+    warp >= 3.0,
+    wai >= 3.0,
+    mtl >= 2.2,
+    http-types >= 0.8
   main-is: Main.hs
   buildable: True
   other-modules:
