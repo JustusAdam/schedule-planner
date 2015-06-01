@@ -78,13 +78,6 @@ calcFromList = calcFromMap.mapToSubject
 
 
 {-|
-  Like 'head' but does not throw errors
--}
-maybeFirst :: [a] -> Maybe a
-maybeFirst = fmap fst . uncons
-
-
-{-|
   Main evaluation function
   Transforms a map of weighted 'Lesson's of a particular subject into a list
   of lightest schedules by branching the evaluation at avery point

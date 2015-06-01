@@ -32,6 +32,7 @@ import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
                                              Rule (..), Target (..), Timeslot,
                                              timeslot, totalWeight)
 import           Text.Printf                (printf)
+import           Control.Monad              (mzero)
 
 
 
@@ -85,6 +86,7 @@ instance FromJSON a => FromJSON (Lesson a) where
     <*> o .: lessonDayKey
     <*> pure 0
     <*> o .: subjectKey
+  parseJSON _          = mzero
 
 
 instance ToJSON a => ToJSON (Lesson a) where
@@ -118,12 +120,14 @@ instance FromJSON Rule where
       fromScope obj "slot" = Slot <$> obj .: ruleSlotKey
       fromScope obj "cell" = Cell <$> obj .: ruleSlotKey <*> obj .: ruleDayKey
       fromScope _ _        = error "unknown input"  -- I am so sorry
+  parseJSON _         = mzero
 
 
 instance FromJSON DataFile where
   parseJSON (Object o) = DataFile
     <$> o .: ruleKey
     <*> o .: lessonKey
+  parseJSON _          = mzero
 
 instance ToJSON DataFile where
   toJSON (DataFile r l) =

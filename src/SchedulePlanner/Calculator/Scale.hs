@@ -51,7 +51,7 @@ class DynamicRule a where
 
 
 instance DynamicRule SimpleDynRule where
-  trigger inserted wMap (SimpleDynRule targ sev) =
+  trigger _ wMap (SimpleDynRule targ sev) =
     (Map.insertWith (+) targ sev wMap, SimpleDynRule targ sev)
 
   getTriggerTarget = return.sDynTarget
