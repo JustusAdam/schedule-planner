@@ -14,10 +14,10 @@ Uses happstack and blaze to create a deployable service instance of this softwar
 module SchedulePlanner.Server (server, app) where
 
 
-import Network.Wai.Handler.Warp (run)
-import Network.Wai (responseLBS, lazyRequestBody, Application)
-import Data.ByteString.Lazy (ByteString)
-import Network.HTTP.Types (status200)
+import           Network.Wai.Handler.Warp (run)
+import           Network.Wai (responseLBS, lazyRequestBody, Application)
+import           Data.ByteString.Lazy (ByteString)
+import           Network.HTTP.Types (status200)
 
 
 app :: (ByteString -> ByteString) -> Application
