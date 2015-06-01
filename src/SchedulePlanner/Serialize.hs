@@ -31,6 +31,7 @@ import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
                                              Rule (..), Target (..), Timeslot,
                                              timeslot, totalWeight)
 import           Text.Printf                (printf)
+import Debug.Trace (trace, traceShow)
 
 
 
@@ -74,17 +75,20 @@ cellWidth     :: Int
 cellWidth     = 20
 
 
+both :: (a -> a -> b) -> a -> b
+both f i = f i i
+
+
 -- |Base structure of the input JSON file
 data DataFile = DataFile [Rule] [Lesson Text]
 
 
 instance FromJSON a => FromJSON (Lesson a) where
-  parseJSON (Object o) =
-    pure Lesson
-      <*> o .: lessonSlotKey
-      <*> o .: lessonDayKey
-      <*> pure 0
-      <*> o .: subjectKey
+  parseJSON (Object o) = Lesson
+    <$> o .: lessonSlotKey
+    <*> o .: lessonDayKey
+    <*> pure 0
+    <*> o .: subjectKey
 
 
 instance ToJSON a => ToJSON (Lesson a) where
@@ -98,8 +102,8 @@ instance ToJSON a => ToJSON (Lesson a) where
 
 instance ToJSON Rule where
   toJSON =
-    object . (pure (:)
-      <*> ((.=) severityKey . severity)
+    object . ((:)
+      <$> ((.=) severityKey . severity)
       <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
     where
       getTarget :: Target -> (Text, [(Text, Value)])
@@ -109,23 +113,21 @@ instance ToJSON Rule where
 
 
 instance FromJSON Rule where
-  parseJSON (Object o) =
-    pure Rule
-      <*> ((o .: scopeKey) >>= fromScope o)
-      <*> o .: severityKey
+  parseJSON (Object o) = Rule
+    <$> ((o .: scopeKey) >>= fromScope o)
+    <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
-      fromScope obj "day"  = Day  <$> (obj .: ruleDayKey)
-      fromScope obj "slot" = Slot <$> (obj .: ruleSlotKey)
-      fromScope obj "cell" = pure Cell <*> obj .: ruleSlotKey <*> obj .: ruleDayKey
+      fromScope obj "day"  = Day  <$> obj .: ruleDayKey
+      fromScope obj "slot" = Slot <$> obj .: ruleSlotKey
+      fromScope obj "cell" = Cell <$> obj .: ruleSlotKey <*> obj .: ruleDayKey
       fromScope _ _        = error "unknown input"  -- I am so sorry
 
 
 instance FromJSON DataFile where
-  parseJSON (Object o) =
-    pure DataFile
-      <*> o .: lessonKey
-      <*> o .: ruleKey
+  parseJSON (Object o) = DataFile
+    <$> o .: ruleKey
+    <*> o .: lessonKey
 
 instance ToJSON DataFile where
   toJSON (DataFile r l) =

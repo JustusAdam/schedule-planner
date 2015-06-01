@@ -19,12 +19,6 @@
         "scope": "slot",
         "slot": 1,
         "severity": 3
-      },
-      {
-        "scope": "cell",
-        "day": 3,
-        "slot": 3,
-        "severity": 2
       }
     ],
     "lessons": [

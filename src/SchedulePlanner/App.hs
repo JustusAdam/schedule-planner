@@ -18,8 +18,8 @@ module SchedulePlanner.App
 
 
 import           Control.Monad.Writer       (Writer, runWriter, tell, when)
-import           Data.Aeson                 (decodeStrict, encode)
-import           Data.ByteString.Lazy       as LBS (toStrict)
+import           Data.Aeson                 (eitherDecode, encode)
+import           Data.ByteString.Lazy       as LBS (toStrict, ByteString)
 import qualified Data.Map                   as Map (elems, keys)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8, encodeUtf8)
@@ -84,9 +84,9 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
 {-|
   perform the calculation and print the result to the command line
 -}
-reportAndPrint :: Text -> Bool -> Text -> IO()
+reportAndPrint :: Text -> Bool -> ByteString -> IO()
 reportAndPrint outputFormat debugMode =
-  TIO.putStrLn . maybe
-    "Stopped execution due to a severe problem with the input data:"
+  TIO.putStrLn . either
+    (pack . ("Stopped execution due to a severe problem with the input data:" ++) . show)
     (snd . runWriter . reportAndExecute outputFormat debugMode)
-     . decodeStrict . Data.Text.Encoding.encodeUtf8
+     . eitherDecode

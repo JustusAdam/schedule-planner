@@ -17,7 +17,7 @@ module Main
   ) where
 
 import           Data.Text                  (pack)
-import           Data.Text.IO               (readFile)
+import           Data.ByteString.Lazy       (readFile)
 import           Options                    (Options, defineOption,
                                              defineOptions, optionDefault,
                                              optionDescription, optionLongFlags,
@@ -36,13 +36,14 @@ stdFileName = "testsuite/test.json"
 outputFormatDefault :: String
 outputFormatDefault = "print"
 
--- |Command line options to choose from 
+-- |Command line options to choose from
 data CallOptions = CallOptions { outputFile   :: Maybe String
                                , inputFile    :: String
                                , outputFormat :: String
                                , server       :: Bool
                                , verbocity    :: Bool
                                } deriving (Show)
+
 
 instance Options CallOptions where
   defineOptions = pure CallOptions
