@@ -1,5 +1,5 @@
 name: schedule-planner
-version: 0.1.0.2
+version: 1.0.0.0
 cabal-version: >=1.10
 build-type: Simple
 license: LGPL-3
@@ -53,4 +53,4 @@ source-repository this
   type:     git
   branch:   stable
   location: git://github.com/JustusAdam/schedule-planner.git
-  tag:      1.0.0
+  tag:      1.0.0.0
