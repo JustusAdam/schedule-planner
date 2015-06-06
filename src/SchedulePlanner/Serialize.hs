@@ -16,6 +16,7 @@ module SchedulePlanner.Serialize
   , shortSubject
   , DataFile(DataFile)
   , eitherDecode
+  , scheduleToJson
   ) where
 
 import           Control.Arrow              as Arrow (first)
@@ -26,7 +27,7 @@ import           Data.Aeson                 (FromJSON, Object, ToJSON,
 import           Data.Aeson.Types           (Parser)
 import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import           Data.List                  as List (intercalate)
-import qualified Data.Map                   as Map (Map, lookup, toList)
+import qualified Data.Map                   as Map (Map, lookup, toList, elems)
 import           Data.Text                  as T (Text, pack)
 import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
                                              Rule (..), Target (..), Timeslot,
@@ -77,7 +78,7 @@ cellWidth     = 20
 
 
 -- |Base structure of the input JSON file
-data DataFile = DataFile [Rule] [Lesson Text]
+data DataFile = DataFile [Rule] [Lesson Text] deriving (Show)
 
 
 instance FromJSON a => FromJSON (Lesson a) where
@@ -118,7 +119,7 @@ instance FromJSON Rule where
       fromScope :: Object -> Text -> Parser Target
       fromScope obj "day"  = Day  <$> obj .: ruleDayKey
       fromScope obj "slot" = Slot <$> obj .: ruleSlotKey
-      fromScope obj "cell" = Cell <$> obj .: ruleSlotKey <*> obj .: ruleDayKey
+      fromScope obj "cell" = Cell <$> obj .: ruleDayKey <*> obj .: ruleSlotKey
       fromScope _ _        = error "unknown input"  -- I am so sorry
   parseJSON _         = mzero
 
@@ -135,6 +136,13 @@ instance ToJSON DataFile where
       [ lessonKey .= l
       , ruleKey   .= r
       ]
+
+
+scheduleToJson :: ToJSON a => MappedSchedule a -> Value
+scheduleToJson = object . sequenceA
+  [ (.=) lessonKey . Map.elems
+  , (.=) "weight"  . totalWeight
+  ]
 
 
 -- |Convert a suitable Map to a JSON Value

@@ -27,8 +27,8 @@ import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn)
 import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh, MappedSchedule)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
-                                             formatSchedule, shortSubject)
-import Data.String (fromString)
+                                             formatSchedule, shortSubject, scheduleToJson)
+import           Data.String (fromString)
 
 
 -- |Print a string if debug is enabled
@@ -50,7 +50,7 @@ serverCalculation =
     (fromString . ("Error:" ++) . show )
     (maybe
       "\"No schedule could be calculated\""
-      (encode . concatMap Map.elems)
+      (encode . map scheduleToJson)
     . calculate)
   . eitherDecode
 
