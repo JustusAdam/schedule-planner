@@ -75,8 +75,7 @@ executable schedule-planner-standalone
     -static
     -optl-pthread
     -optl-static
-    -O2
-
+    
 source-repository head
   type:     git
   location: git://github.com/JustusAdam/schedule-planner.git
