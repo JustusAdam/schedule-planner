@@ -29,6 +29,9 @@ import           SchedulePlanner.App        (reportAndPrint, serverCalculation)
 import qualified SchedulePlanner.Server     as Server (server)
 
 
+{-|
+  If no input filename is provided, use this one.
+-}
 stdFileName :: String
 stdFileName = "testsuite/test.json"
 
@@ -38,21 +41,30 @@ outputFormatDefault :: String
 outputFormatDefault = "print"
 
 
+{-|
+  If no server port is provided via command line flag, this one is used.
+-}
 defaultServerPort :: Int
 defaultServerPort = 7097
 
 
+{-|
+  Common options among all subcommands.
+-}
 data CommonOptions = CommonOptions
 
 
 instance Options CommonOptions where
   defineOptions = pure CommonOptions
 
--- |Command line options to choose from
-data DirectCallOptions = DirectCallOptions { outputFile   :: Maybe String
-                                           , inputFile    :: String
-                                           , outputFormat :: String
-                                           , verbocity    :: Bool
+
+{-|
+  Command line options for the "calc" subcommand.
+-}
+data DirectCallOptions = DirectCallOptions { outputFile   :: Maybe String -- ^ if provided writes the output into a file
+                                           , inputFile    :: String -- ^ the file from which to read the input, default 'stdFileName'
+                                           , outputFormat :: String -- ^ supported formats are "print" and "json", default 'outputFormatDefault'
+                                           , verbocity    :: Bool   -- ^ not sure this does anything ...
                                            } deriving (Show)
 
 
@@ -88,7 +100,12 @@ instance Options DirectCallOptions where
                    })
 
 
-data ServerOptions = ServerOptions { port :: Int }
+{-|
+  Options used for the "serve" subcommand.
+-}
+data ServerOptions = ServerOptions
+  { port :: Int -- ^ default 'defaultServerPort'
+  }
 
 
 instance Options ServerOptions where
@@ -113,6 +130,9 @@ main =
     , subcommand "serve" serverMain
     ]
 
+{-|
+  Main function of the "calc" subcommand.
+-}
 directCall :: CommonOptions -> DirectCallOptions -> [String] -> IO ()
 directCall
   _
@@ -126,5 +146,8 @@ directCall
         reportAndPrint (pack outForm) v
 
 
+{-|
+  Main function of the "serve" subcommand.
+-}
 serverMain :: CommonOptions -> ServerOptions -> [String] -> IO ()
 serverMain _ (ServerOptions { port = p }) _ = Server.server p serverCalculation

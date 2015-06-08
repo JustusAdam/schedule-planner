@@ -37,42 +37,42 @@ import           Control.Monad              (mzero)
 
 
 
--- |Key for the rules data in the json input
+-- | Key for the rules data in the json input
 ruleKey       :: Text
 ruleKey       = "rules"
--- |Key for the lesson data in the json input
+-- | Key for the lesson data in the json input
 lessonKey     :: Text
 lessonKey     = "lessons"
--- |Key for the scope property in Rule objects in the json input
+-- | Key for the scope property in Rule objects in the json input
 scopeKey      :: Text
 scopeKey      = "scope"
--- |Key for the severity property in Rule objects in the json input
+-- | Key for the severity property in Rule objects in the json input
 severityKey   :: Text
 severityKey   = "severity"
--- |Key for the day property in Rule objects in the json input
+-- | Key for the day property in Rule objects in the json input
 ruleDayKey    :: Text
 ruleDayKey    = "day"
--- |Key for the slot property in Rule objects in the json input
+-- | Key for the slot property in Rule objects in the json input
 ruleSlotKey   :: Text
 ruleSlotKey   = "slot"
--- |Key for the subject property in Lesson objects in the json input
+-- | Key for the subject property in Lesson objects in the json input
 subjectKey    :: Text
 subjectKey    = "subject"
--- |Key for the day property in Lesson objects in the json input
+-- | Key for the day property in Lesson objects in the json input
 lessonDayKey  :: Text
 lessonDayKey  = "day"
--- |Key for the slot property in Rule objects in the json input
+-- | Key for the slot property in Rule objects in the json input
 lessonSlotKey :: Text
 lessonSlotKey = "slot"
 
 
--- |How many days a week has
+-- | How many days a week has
 daysPerWeek   :: Int
 daysPerWeek   = 7
--- |The amount of imeslots each day
+-- | The amount of imeslots each day
 slotsPerDay   :: Int
 slotsPerDay   = 7
--- |The caracter width of a single slot in output
+-- | The caracter width of a single slot in output
 cellWidth     :: Int
 cellWidth     = 20
 
@@ -120,7 +120,7 @@ instance FromJSON Rule where
       fromScope obj "day"  = Day  <$> obj .: ruleDayKey
       fromScope obj "slot" = Slot <$> obj .: ruleSlotKey
       fromScope obj "cell" = Cell <$> obj .: ruleDayKey <*> obj .: ruleSlotKey
-      fromScope _ _        = error "unknown input"  -- I am so sorry
+      fromScope _   _      = error "unknown input"  -- I am so sorry
   parseJSON _         = mzero
 
 
@@ -130,6 +130,7 @@ instance FromJSON DataFile where
     <*> o .: lessonKey
   parseJSON _          = mzero
 
+
 instance ToJSON DataFile where
   toJSON (DataFile r l) =
     object
@@ -138,6 +139,9 @@ instance ToJSON DataFile where
       ]
 
 
+{-|
+  Convert a single 'MappedSchedule' to a JSON 'Value'
+-}
 scheduleToJson :: ToJSON a => MappedSchedule a -> Value
 scheduleToJson = object . sequenceA
   [ (.=) lessonKey . Map.elems

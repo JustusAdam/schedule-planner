@@ -25,9 +25,10 @@ import qualified Data.Map                   as Map (elems, keys)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn)
-import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh, MappedSchedule)
+import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh,
+                                            MappedSchedule)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
-                                             formatSchedule, shortSubject, scheduleToJson)
+                                            formatSchedule, shortSubject, scheduleToJson)
 import           Data.String (fromString)
 
 
@@ -36,6 +37,9 @@ printDebug :: Show a => Bool -> a -> Writer Text ()
 printDebug debugMode = when debugMode . tell . pack . show
 
 
+{-|
+  Calculation on internal data structures.
+-}
 calculate :: DataFile -> Maybe [MappedSchedule Text]
 calculate (DataFile rules lessons) =
   let
@@ -44,10 +48,13 @@ calculate (DataFile rules lessons) =
   in calcFromMap mappedLessons
 
 
+{-|
+  Calculation wrapped into server I/O compatible data structures.
+-}
 serverCalculation :: ByteString -> ByteString
 serverCalculation =
   either
-    (fromString . ("Error:" ++) . show )
+    (fromString . ("Error:" ++) . show)
     (maybe
       "\"No schedule could be calculated\""
       (encode . map scheduleToJson)

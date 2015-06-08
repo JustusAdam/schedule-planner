@@ -33,7 +33,7 @@ import qualified Data.Ord      as Ord (comparing)
 import           Data.Typeable (Typeable)
 
 
--- |Base datastructure for representing lessons
+-- | Base datastructure for representing lessons
 data Lesson s = Lesson {
   timeslot :: Int,
   day      :: Int,
@@ -42,23 +42,33 @@ data Lesson s = Lesson {
 } deriving (Show, Eq, Ord, Typeable, Data)
 
 
--- |type Alias for readability
--- maps lessons to their respective subject
+{-|
+  type Alias for readability
+  maps lessons to their respective subject
+-}
 type MappedLessons s  = Map.Map s [Lesson s]
--- |type Alias for readability
--- (Slot, Day)
+
+
+{-|
+  type Alias for readability
+  (Slot, Day)
+-}
 type Timeslot         = (Int, Int)
--- |type Alias for readability
--- represents a schedule
+
+
+{-|
+  type Alias for readability
+  represents a schedule
+-}
 type MappedSchedule s = Map.Map Timeslot (Lesson s)
 
 
--- |Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
+-- | Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
 time :: Lesson a -> Timeslot
 time = pure (,) <*> day <*> timeslot
 
 
--- |Convenience function to obtain the total weight of a particular Schedule
+-- | Convenience function to obtain the total weight of a particular Schedule
 totalWeight :: MappedSchedule a -> Int
 totalWeight = Map.foldl (+) 0 . Map.map weight
 
@@ -83,7 +93,9 @@ calcFromList = calcFromMap.mapToSubject
   of lightest schedules by branching the evaluation at avery point
   where there is a timeslot collision
 -}
-calcFromMap :: Ord s => Map.Map s [Lesson s] -> Maybe [MappedSchedule s]
+calcFromMap :: Ord s
+            => Map.Map s [Lesson s]
+            -> Maybe [MappedSchedule s]
 calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
   | otherwise               = reduceLists subjX sortedLessons Map.empty minList
@@ -96,7 +108,12 @@ calcFromMap mappedLessons
   One of the essential calculation steps, reducing the subject lists and
   recursing the calculation
 -}
-reduceLists :: Ord s => s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
+reduceLists :: Ord s
+            => s
+            -> MappedLessons s
+            -> MappedSchedule s
+            -> [s]
+            -> Maybe [MappedSchedule s]
 reduceLists s mappedLessons schedules subjects =
   Map.lookup s mappedLessons >>= uncons >>=
     \(c, cs)  -> calc' c (Map.insert s cs mappedLessons) schedules subjects
@@ -108,12 +125,10 @@ reduceLists s mappedLessons schedules subjects =
 -}
 calc' :: Ord s => Lesson s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
 calc' x lists hourMap minList =
-
   maybe
     maybeEnd
     splitCalc
     (Map.lookup (time x) hourMap)
-
 
   where
     maybeEnd = maybe

@@ -30,24 +30,24 @@ import           Data.Typeable                     (Typeable)
 import           SchedulePlanner.Calculator.Solver (Lesson (..), time, timeslot)
 
 
--- |The scope and target a 'Rule' whishes to influence
+-- | The scope and target a 'Rule' whishes to influence
 data Target         = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data, Ord, Eq)
--- |Weight increase by 'severity' for all 'Lesson's in target
-data Rule           = Rule {target :: Target, severity :: Int} deriving (Show, Typeable, Data)
--- |Dynamic rule with only one condition
-data SimpleDynRule  = SimpleDynRule {sDynTarget :: Target, sDynSeverity :: Int} deriving (Show)
+-- | Weight increase by 'severity' for all 'Lesson's in target
+data Rule           = Rule { target :: Target, severity :: Int } deriving (Show, Typeable, Data)
+-- | Dynamic rule with only one condition
+data SimpleDynRule  = SimpleDynRule { sDynTarget :: Target, sDynSeverity :: Int } deriving (Show)
 
 
--- |Type alias for more expressive function signature
-type WeightMap   = Map.Map Target Int
--- |Type alias for structure holding the dynamic rules
-type DynRuleMap a  = Map.Map Target [a]
+-- | Type alias for more expressive function signature
+type WeightMap      = Map.Map Target Int
+-- | Type alias for structure holding the dynamic rules
+type DynRuleMap a   = Map.Map Target [a]
 
 
--- |Scaffolding for a dynamic rule
-class DynamicRule a where
-  trigger          :: Lesson s -> WeightMap -> a -> (WeightMap, a)
-  getTriggerTarget :: a -> [Target]
+-- | Scaffolding for a dynamic rule
+class DynamicRule r where
+  trigger          :: Lesson s -> WeightMap -> r -> (WeightMap, r)
+  getTriggerTarget :: r -> [Target]
 
 
 instance DynamicRule SimpleDynRule where
@@ -57,7 +57,7 @@ instance DynamicRule SimpleDynRule where
   getTriggerTarget = return.sDynTarget
 
 
--- |Recalculate the lesson weight tuple as a result of dynamic rules
+-- | Recalculate the lesson weight tuple as a result of dynamic rules
 reCalcMaps :: DynamicRule a => Lesson s -> DynRuleMap a -> WeightMap -> (DynRuleMap a, WeightMap)
 reCalcMaps lesson = runState .
   (reCalcHelper lesson (Slot (timeslot lesson)) >=>
@@ -65,6 +65,9 @@ reCalcMaps lesson = runState .
       reCalcHelper lesson (uncurry Cell (time lesson)))
 
 
+{-|
+  Stateful recalculation of the rule map triggered by a change.
+-}
 reCalcHelper :: (DynamicRule a, Ord k)
     => Lesson s
     -> k
@@ -103,12 +106,14 @@ weighOne wm l =
   l {weight = weight l + allTargeting l wm}
 
 
+{-|
+  Find the full weight impact from the rules on a specific lesson.
+-}
 allTargeting :: Lesson s -> WeightMap -> Int
-allTargeting l = pure (((+) .) . (+))
-  <*> Map.findWithDefault 0 (Slot $ timeslot l)
+allTargeting l = (((+) .) . (+))
+  <$> Map.findWithDefault 0 (Slot $ timeslot l)
   <*> Map.findWithDefault 0 (Day $ day l)
   <*> Map.findWithDefault 0 (uncurry Cell $ time l)
-
 
 
 {-|
