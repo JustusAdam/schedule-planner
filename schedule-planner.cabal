@@ -31,7 +31,8 @@ executable schedule-planner
     warp          >= 3.0,
     wai           >= 3.0,
     mtl           >= 2.2,
-    http-types    >= 0.8
+    http-types    >= 0.8,
+    wai-cors      >= 0.2
   main-is: Main.hs
   buildable: True
   other-modules:
@@ -60,7 +61,8 @@ executable schedule-planner-standalone
     warp          >= 3.0,
     wai           >= 3.0,
     mtl           >= 2.2,
-    http-types    >= 0.8
+    http-types    >= 0.8,
+    wai-cors      >= 0.2
   main-is: Main.hs
   buildable: True
   other-modules:
