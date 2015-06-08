@@ -15,15 +15,38 @@ module SchedulePlanner.Server (server, app) where
 
 
 import           Network.Wai.Handler.Warp (run)
-import           Network.Wai (responseLBS, lazyRequestBody, Application)
-import           Data.ByteString.Lazy (ByteString)
-import           Network.HTTP.Types (status200)
+import           Network.Wai              (responseLBS, lazyRequestBody, Application, requestHeaders)
+import           Data.ByteString.Lazy     (ByteString)
+import           Network.HTTP.Types       (status200, HeaderName, Header)
+import qualified Data.ByteString          as BS (ByteString, intercalate)
+
+
+hOrigin :: HeaderName
+hOrigin = "Origin"
+
+
+hCrossOrigin :: HeaderName
+hCrossOrigin = "Access-Control-Allow-Origin"
+
+
+hAccessMethods :: HeaderName
+hAccessMethods = "Access-Control-Allow-Methods"
+
+
+crossOriginHeaderField :: [BS.ByteString] -> Header
+crossOriginHeaderField = (,) hCrossOrigin . BS.intercalate ", "
 
 
 app :: (ByteString -> ByteString) -> Application
-app a request respond = do
+app app' request respond = do
   body <- lazyRequestBody request
-  respond $ responseLBS status200 [] $ a body
+  respond $ responseLBS status200 headers $ app' body
+  where
+    rheaders = requestHeaders request
+    headers =
+      if elem hOrigin (map fst rheaders)
+        then [ crossOriginHeaderField [ "http://justus.science" ], (hAccessMethods, "POST") ]
+        else []
 
 server :: Int -> (ByteString -> ByteString) -> IO ()
 server port = run port . app

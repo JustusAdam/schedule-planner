@@ -18,22 +18,24 @@ author: Justus Adam <development@justusadam.com>
 -- data-dir: ""
 extra-source-files: README.md
 
+
 executable schedule-planner
   build-depends:
-    base >= 4.7 && <5,
-    containers >= 0.5,
-    aeson >= 0.8,
-    options >= 1.2,
-    transformers >= 0.4,
-    bytestring >= 0.10,
-    text >= 1.2,
-    warp >= 3.0,
-    wai >= 3.0,
-    mtl >= 2.2,
-    http-types >= 0.8
+    base          >= 4.7 && <5,
+    containers    >= 0.5,
+    aeson         >= 0.8,
+    options       >= 1.2,
+    transformers  >= 0.4,
+    bytestring    >= 0.10,
+    text          >= 1.2,
+    warp          >= 3.0,
+    wai           >= 3.0,
+    mtl           >= 2.2,
+    http-types    >= 0.8
   main-is: Main.hs
   buildable: True
   other-modules:
+    SchedulePlanner
     SchedulePlanner.App
     SchedulePlanner.Calculator
     SchedulePlanner.Serialize
@@ -48,20 +50,21 @@ executable schedule-planner
 
 executable schedule-planner-standalone
   build-depends:
-    base >= 4.7 && <5,
-    containers >= 0.5,
-    aeson >= 0.8,
-    options >= 1.2,
-    transformers >= 0.4,
-    bytestring >= 0.10,
-    text >= 1.2,
-    warp >= 3.0,
-    wai >= 3.0,
-    mtl >= 2.2,
-    http-types >= 0.8
+    base          >= 4.7 && <5,
+    containers    >= 0.5,
+    aeson         >= 0.8,
+    options       >= 1.2,
+    transformers  >= 0.4,
+    bytestring    >= 0.10,
+    text          >= 1.2,
+    warp          >= 3.0,
+    wai           >= 3.0,
+    mtl           >= 2.2,
+    http-types    >= 0.8
   main-is: Main.hs
   buildable: True
   other-modules:
+    SchedulePlanner
     SchedulePlanner.App
     SchedulePlanner.Calculator
     SchedulePlanner.Serialize
@@ -75,10 +78,12 @@ executable schedule-planner-standalone
     -static
     -optl-pthread
     -optl-static
-    
+
+
 source-repository head
   type:     git
   location: git://github.com/JustusAdam/schedule-planner.git
+
 
 source-repository this
   type:     git
