@@ -31,15 +31,28 @@ import           SchedulePlanner.Calculator.Solver (Lesson (..), time, timeslot)
 
 
 -- | The scope and target a 'Rule' whishes to influence
-data Target         = Slot Int | Day Int | Cell Int Int deriving (Show, Typeable, Data, Ord, Eq)
+data Target = Slot Int
+            | Day Int
+            | Cell Int Int
+            deriving (Show, Typeable, Data, Ord, Eq)
+
+
 -- | Weight increase by 'severity' for all 'Lesson's in target
-data Rule           = Rule { target :: Target, severity :: Int } deriving (Show, Typeable, Data)
+data Rule = Rule { target   :: Target
+                 , severity :: Int
+                 } deriving (Show, Typeable, Data)
+
+
 -- | Dynamic rule with only one condition
-data SimpleDynRule  = SimpleDynRule { sDynTarget :: Target, sDynSeverity :: Int } deriving (Show)
+data SimpleDynRule = SimpleDynRule { sDynTarget   :: Target
+                                   , sDynSeverity :: Int
+                                   } deriving (Show)
 
 
 -- | Type alias for more expressive function signature
 type WeightMap      = Map.Map Target Int
+
+
 -- | Type alias for structure holding the dynamic rules
 type DynRuleMap a   = Map.Map Target [a]
 

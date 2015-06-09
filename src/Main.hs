@@ -61,11 +61,12 @@ instance Options CommonOptions where
 {-|
   Command line options for the "calc" subcommand.
 -}
-data DirectCallOptions = DirectCallOptions { outputFile   :: Maybe String -- ^ if provided writes the output into a file
-                                           , inputFile    :: String -- ^ the file from which to read the input, default 'stdFileName'
-                                           , outputFormat :: String -- ^ supported formats are "print" and "json", default 'outputFormatDefault'
-                                           , verbocity    :: Bool   -- ^ not sure this does anything ...
-                                           } deriving (Show)
+data DirectCallOptions = DirectCallOptions
+  { outputFile   :: Maybe String -- ^ if provided writes the output into a file
+  , inputFile    :: String -- ^ the file from which to read the input, default 'stdFileName'
+  , outputFormat :: String -- ^ supported formats are "print" and "json", default 'outputFormatDefault'
+  , verbocity    :: Bool   -- ^ not sure this does anything ...
+  } deriving (Show)
 
 
 instance Options DirectCallOptions where

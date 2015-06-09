@@ -34,12 +34,11 @@ import           Data.Typeable (Typeable)
 
 
 -- | Base datastructure for representing lessons
-data Lesson s = Lesson {
-  timeslot :: Int,
-  day      :: Int,
-  weight   :: Int,
-  subject  :: s
-} deriving (Show, Eq, Ord, Typeable, Data)
+data Lesson s = Lesson { timeslot :: Int
+                       , day      :: Int
+                       , weight   :: Int
+                       , subject  :: s
+                       } deriving (Show, Eq, Ord, Typeable, Data)
 
 
 {-|
@@ -65,7 +64,7 @@ type MappedSchedule s = Map.Map Timeslot (Lesson s)
 
 -- | Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
 time :: Lesson a -> Timeslot
-time = pure (,) <*> day <*> timeslot
+time = (,) <$> day <*> timeslot
 
 
 -- | Convenience function to obtain the total weight of a particular Schedule
@@ -77,7 +76,7 @@ totalWeight = Map.foldl (+) 0 . Map.map weight
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: Ord s => [Lesson s] -> Map.Map s [Lesson s]
-mapToSubject = Map.fromListWith (++) . map (pure (,) <*> subject <*> (:[]))
+mapToSubject = Map.fromListWith (++) . map ((,) <$> subject <*> (:[]))
 
 
 {-|
