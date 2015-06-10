@@ -16,23 +16,10 @@ module SchedulePlanner.Server (server, app) where
 import           Network.Wai.Handler.Warp     (run)
 import           Network.Wai                  (responseLBS, lazyRequestBody,
                                               Application, requestHeaders)
-import           Network.Wai.Middleware.Cors  (cors, CorsResourcePolicy(..),
-                                              simpleCorsResourcePolicy)
 import           Data.ByteString.Lazy         (ByteString)
 import           Network.HTTP.Types           (status200, HeaderName, Header,
                                               methodPost, methodOptions)
 import qualified Data.ByteString              as BS (ByteString, intercalate)
-import           Debug.Trace                  (traceShow)
-
-
-{-|
-  CORS application policy for the AJAX requests.
--}
-applicationPolicy :: CorsResourcePolicy
-applicationPolicy = simpleCorsResourcePolicy
-  { corsOrigins = Just ([ "http://justus.science", "http://justus.science:80" ], False)
-  , corsMethods = [ methodPost ]
-  }
 
 
 {-|
@@ -43,14 +30,15 @@ app app' request respond =
   lazyRequestBody request >>=
     respond . responseLBS status200 headers . app'
   where
-    showIt :: Show a => a -> a
-    showIt a = traceShow a a
-
-    headers = []
+    headers = [
+        ("Access-Control-Allow-Origin", "http://justus.science"),
+        ("Access-Control-Allow-Methods", "POST"),
+        ("Access-Control-Allow-Headers", "Content-Type")
+      ]
 
 
 {-|
   Run the server.
 -}
 server :: Int -> (ByteString -> ByteString) -> IO ()
-server port = run port . cors (const $ Just applicationPolicy) . app
+server port = run port . app
