@@ -15,21 +15,24 @@ module SchedulePlanner.Server (server, app) where
 
 import           Network.Wai.Handler.Warp     (run)
 import           Network.Wai                  (responseLBS, lazyRequestBody,
-                                              Application, requestHeaders)
+                                              Application, requestMethod)
 import           Data.ByteString.Lazy         (ByteString)
-import           Network.HTTP.Types           (status200, HeaderName, Header,
-                                              methodPost, methodOptions)
-import qualified Data.ByteString              as BS (ByteString, intercalate)
+import           Network.HTTP.Types           (ok200, methodPost, methodOptions,
+                                              imATeaPot418)
 
 
 {-|
   The 'Application' used for the server instance.
 -}
 app :: (ByteString -> ByteString) -> Application
-app app' request respond =
-  lazyRequestBody request >>=
-    respond . responseLBS status200 headers . app'
+app app' request respond
+  | rMethod == methodPost =
+    lazyRequestBody request >>=
+      respond . responseLBS ok200 headers . app'
+  | rMethod == methodOptions = respond $ responseLBS ok200 headers "Bring it!"
+  | otherwise = respond $ responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?"
   where
+    rMethod = requestMethod request
     headers = [
         ("Access-Control-Allow-Origin", "http://justus.science"),
         ("Access-Control-Allow-Methods", "POST"),
