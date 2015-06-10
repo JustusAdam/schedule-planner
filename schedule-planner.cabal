@@ -1,5 +1,5 @@
 name: schedule-planner
-version: 1.0.0.1
+version: 1.0.1.0
 cabal-version: >=1.10
 build-type: Simple
 license: LGPL-3
@@ -60,8 +60,7 @@ executable schedule-planner-standalone
     warp          >= 3.0,
     wai           >= 3.0,
     mtl           >= 2.2,
-    http-types    >= 0.8,
-    wai-cors      >= 0.2
+    http-types    >= 0.8
   main-is: Main.hs
   buildable: True
   other-modules:
