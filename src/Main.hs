@@ -12,21 +12,25 @@ main function and outside communication for this software.
 This module takes care of reading all input and checking for correctness
 as well as providing useful feedback upon encountering errors.
 -}
-module Main (main) where
+module Main 
+  ( main
+  , DirectCallOptions(..)
+  , CommonOptions(..)
+  , ServerOptions(..)
+  ) where
 
 
-import           Data.Text                  (pack)
-import           Data.ByteString.Lazy       (readFile)
-import           Options                    (Options, defineOption,
-                                             defineOptions, optionDefault,
-                                             optionDescription, optionLongFlags,
-                                             optionShortFlags, optionType_bool,
-                                             optionType_maybe, optionType_int,
-                                             optionType_string, runSubcommand,
-                                             subcommand)
-import           Prelude                    hiding (readFile)
-import           SchedulePlanner.App        (reportAndPrint, serverCalculation)
-import qualified SchedulePlanner.Server     as Server (server)
+import           Data.ByteString.Lazy   (readFile)
+import           Data.Text              (pack)
+import           Options                (Options, defineOption, defineOptions,
+                                         optionDefault, optionDescription,
+                                         optionLongFlags, optionShortFlags,
+                                         optionType_bool, optionType_int,
+                                         optionType_maybe, optionType_string,
+                                         runSubcommand, subcommand)
+import           Prelude                hiding (readFile)
+import           SchedulePlanner.App    (reportAndPrint, serverCalculation)
+import qualified SchedulePlanner.Server as Server (server)
 
 
 {-|
@@ -62,10 +66,10 @@ instance Options CommonOptions where
   Command line options for the "calc" subcommand.
 -}
 data DirectCallOptions = DirectCallOptions
-  { outputFile   :: Maybe String -- ^ if provided writes the output into a file
-  , inputFile    :: String -- ^ the file from which to read the input, default 'stdFileName'
-  , outputFormat :: String -- ^ supported formats are "print" and "json", default 'outputFormatDefault'
-  , verbocity    :: Bool   -- ^ not sure this does anything ...
+  { outputFile   :: Maybe String  -- ^ if provided writes the output into a file
+  , inputFile    :: String  -- ^ the file from which to read the input, default 'stdFileName'
+  , outputFormat :: String  -- ^ supported formats are "print" and "json", default 'outputFormatDefault'
+  , verbocity    :: Bool    -- ^ not sure this does anything ...
   } deriving (Show)
 
 
@@ -141,10 +145,10 @@ directCall
       { inputFile = ifile
       , outputFormat = outForm
       , verbocity = v
+      , outputFile = outFile
       })
   _
-  = readFile ifile >>=
-        reportAndPrint (pack outForm) v
+  = readFile ifile >>= reportAndPrint (pack outForm) v outFile
 
 
 {-|

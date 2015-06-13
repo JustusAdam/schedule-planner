@@ -18,18 +18,20 @@ module SchedulePlanner.App
   ) where
 
 
+import           Control.Arrow              ((&&&))
 import           Control.Monad.Writer       (Writer, runWriter, tell, when)
 import           Data.Aeson                 (eitherDecode, encode)
-import           Data.ByteString.Lazy       as LBS (toStrict, ByteString)
+import           Data.ByteString.Lazy       as LBS (ByteString, toStrict)
 import qualified Data.Map                   as Map (elems, keys)
+import           Data.String                (fromString)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8)
-import           Data.Text.IO               as TIO (putStrLn)
-import           SchedulePlanner.Calculator (calcFromMap, mapToSubject, weigh,
-                                            MappedSchedule)
+import           Data.Text.IO               as TIO (putStrLn, writeFile)
+import           SchedulePlanner.Calculator (MappedSchedule, calcFromMap,
+                                             mapToSubject, weigh)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
-                                            formatSchedule, shortSubject, scheduleToJson)
-import           Data.String (fromString)
+                                             formatSchedule, scheduleToJson,
+                                             shortSubject)
 
 
 -- |Print a string if debug is enabled
@@ -42,10 +44,7 @@ printDebug debugMode = when debugMode . tell . pack . show
 -}
 calculate :: DataFile -> Maybe [MappedSchedule Text]
 calculate (DataFile rules lessons) =
-  let
-    weighted      = weigh rules lessons
-    mappedLessons = mapToSubject weighted
-  in calcFromMap mappedLessons
+  calcFromMap $ mapToSubject $ weigh rules lessons
 
 
 {-|
@@ -67,11 +66,7 @@ serverCalculation =
   and returns a writer of any output created.
 -}
 reportAndExecute :: Text -> Bool -> DataFile -> Writer Text ()
-reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
-  let weighted      = weigh rules lessons
-
-  let mappedLessons = mapToSubject weighted
-
+reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
   maybe
     (tell "Calculation failed, no valid schedule possible")
 
@@ -90,7 +85,7 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
           tell "\n"
 
           tell "Legend:"
-          _       <- mapM (tell . pack . show . (pure (,) <*> shortSubject <*> id) ) (Map.keys mappedLessons)
+          _       <- mapM (tell . pack . show . (shortSubject &&& id) ) (Map.keys mappedLessons)
 
 
           tell "\n"
@@ -106,15 +101,17 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  = do
     (calcFromMap mappedLessons)
 
   where
-    pc = mapM (tell . append "\n\n" . formatSchedule)
+    weighted      = weigh rules lessons
+    mappedLessons = mapToSubject weighted
+    pc            = mapM (tell . append "\n\n" . formatSchedule)
 
 
 {-|
   perform the calculation and print the result to the command line
 -}
-reportAndPrint :: Text -> Bool -> ByteString -> IO()
-reportAndPrint outputFormat debugMode =
-  TIO.putStrLn . either
+reportAndPrint :: Text -> Bool -> Maybe String -> ByteString -> IO()
+reportAndPrint outputFormat debugMode outFile =
+  maybe TIO.putStrLn TIO.writeFile outFile . either
     (pack . ("Stopped execution due to a severe problem with the input data:" ++) . show)
     (snd . runWriter . reportAndExecute outputFormat debugMode)
      . eitherDecode

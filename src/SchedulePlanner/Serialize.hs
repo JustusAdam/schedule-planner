@@ -20,20 +20,20 @@ module SchedulePlanner.Serialize
   ) where
 
 import           Control.Arrow              as Arrow (first)
+import           Control.Monad              (mzero)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
-                                             Value (Object), decode, encode,
-                                             object, parseJSON, toJSON, (.:),
-                                             (.=), eitherDecode)
+                                             Value (Object), decode,
+                                             eitherDecode, encode, object,
+                                             parseJSON, toJSON, (.:), (.=))
 import           Data.Aeson.Types           (Parser)
 import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import           Data.List                  as List (intercalate)
-import qualified Data.Map                   as Map (Map, lookup, toList, elems)
+import qualified Data.Map                   as Map (Map, elems, lookup, toList)
 import           Data.Text                  as T (Text, pack)
 import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
                                              Rule (..), Target (..), Timeslot,
                                              timeslot, totalWeight)
 import           Text.Printf                (printf)
-import           Control.Monad              (mzero)
 
 
 
