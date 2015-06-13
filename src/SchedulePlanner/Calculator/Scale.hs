@@ -20,27 +20,29 @@ module SchedulePlanner.Calculator.Scale
 
 import           Control.Monad                     ((>=>))
 import           Control.Monad.Trans.State         (State, get, put, runState)
-import           Data.Data                         (Data)
+import           Data.Composition                  ((.:))
 import           Data.List                         as List (mapAccumL)
 import qualified Data.Map                          as Map (Map, empty,
                                                            findWithDefault,
                                                            insert, insertWith,
                                                            lookup)
 import           Data.Typeable                     (Typeable)
-import           SchedulePlanner.Calculator.Solver (Lesson (..), time, timeslot)
+import           SchedulePlanner.Calculator.Solver (Cell (..), Day (..),
+                                                    Lesson (..), Slot (..),
+                                                    time, timeslot)
 
 
 -- | The scope and target a 'Rule' whishes to influence
-data Target = Slot Int
-            | Day Int
-            | Cell Int Int
-            deriving (Show, Typeable, Data, Ord, Eq)
+data Target = TSlot Slot
+            | TDay Day
+            | TCell Cell
+            deriving (Show, Typeable, Ord, Eq)
 
 
 -- | Weight increase by 'severity' for all 'Lesson's in target
 data Rule = Rule { target   :: Target
                  , severity :: Int
-                 } deriving (Show, Typeable, Data)
+                 } deriving (Show, Typeable)
 
 
 -- | Dynamic rule with only one condition
@@ -50,11 +52,11 @@ data SimpleDynRule = SimpleDynRule { sDynTarget   :: Target
 
 
 -- | Type alias for more expressive function signature
-type WeightMap      = Map.Map Target Int
+type WeightMap    = Map.Map Target Int
 
 
 -- | Type alias for structure holding the dynamic rules
-type DynRuleMap a   = Map.Map Target [a]
+type DynRuleMap a = Map.Map Target [a]
 
 
 -- | Scaffolding for a dynamic rule
@@ -71,24 +73,28 @@ instance DynamicRule SimpleDynRule where
 
 
 -- | Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: DynamicRule a => Lesson s -> DynRuleMap a -> WeightMap -> (DynRuleMap a, WeightMap)
+reCalcMaps :: DynamicRule a 
+           => Lesson s 
+           -> DynRuleMap a
+           -> WeightMap 
+           -> (DynRuleMap a, WeightMap)
 reCalcMaps lesson = runState .
-  (reCalcHelper lesson (Slot (timeslot lesson)) >=>
-    reCalcHelper lesson (Day (day lesson)) >=>
-      reCalcHelper lesson (uncurry Cell (time lesson)))
+  (reCalcHelper lesson (TSlot (timeslot lesson)) >=>
+    reCalcHelper lesson (TDay (day lesson)) >=>
+      reCalcHelper lesson (TCell (time lesson)))
 
 
 {-|
   Stateful recalculation of the rule map triggered by a change.
 -}
 reCalcHelper :: (DynamicRule a, Ord k)
-    => Lesson s
-    -> k
-    -> Map.Map k [a]
-    -> State WeightMap (Map.Map k [a])
+             => Lesson s
+             -> k
+             -> Map.Map k [a]
+             -> State WeightMap (Map.Map k [a])
 reCalcHelper inserted key =
-  pure maybe
-    <*> return
+  maybe
+    <$> return
     <*> (\rMap rules -> do
             s <- get
             let (newState, newRules) = mapAccumL (trigger inserted) s rules
@@ -123,10 +129,12 @@ weighOne wm l =
   Find the full weight impact from the rules on a specific lesson.
 -}
 allTargeting :: Lesson s -> WeightMap -> Int
-allTargeting l = (((+) .) . (+))
-  <$> Map.findWithDefault 0 (Slot $ timeslot l)
-  <*> Map.findWithDefault 0 (Day $ day l)
-  <*> Map.findWithDefault 0 (uncurry Cell $ time l)
+allTargeting = (sum .: sequenceA) . sequenceA
+  (map (Map.findWithDefault 0 .)
+    [ TSlot . timeslot
+    , TDay . day
+    , TCell . time
+    ])
 
 
 {-|

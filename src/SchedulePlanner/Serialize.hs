@@ -19,7 +19,7 @@ module SchedulePlanner.Serialize
   , scheduleToJson
   ) where
 
-import           Control.Arrow              as Arrow (first)
+import           Control.Arrow              as Arrow (first, (***), second)
 import           Control.Monad              (mzero)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
                                              Value (Object), decode,
@@ -27,12 +27,14 @@ import           Data.Aeson                 (FromJSON, Object, ToJSON,
                                              parseJSON, toJSON, (.:), (.=))
 import           Data.Aeson.Types           (Parser)
 import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
+import qualified Data.Composition           as Comp ((.:))
 import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, elems, lookup, toList)
 import           Data.Text                  as T (Text, pack)
-import           SchedulePlanner.Calculator (Lesson (..), MappedSchedule,
-                                             Rule (..), Target (..), Timeslot,
-                                             timeslot, totalWeight)
+import           SchedulePlanner.Calculator (Cell (..), Day (..), Lesson (..),
+                                             MappedSchedule, Rule (..),
+                                             Slot (..), Target (..), timeslot,
+                                             totalWeight)
 import           Text.Printf                (printf)
 
 
@@ -82,7 +84,7 @@ data DataFile = DataFile [Rule] [Lesson Text] deriving (Show)
 
 
 instance FromJSON a => FromJSON (Lesson a) where
-  parseJSON (Object o) = Lesson
+  parseJSON (Object o) = (\a b -> Lesson (Slot a) (Day b))
     <$> o .: lessonSlotKey
     <*> o .: lessonDayKey
     <*> pure 0
@@ -93,8 +95,8 @@ instance FromJSON a => FromJSON (Lesson a) where
 instance ToJSON a => ToJSON (Lesson a) where
   toJSON =
     object . sequenceA
-      [ (.=) lessonSlotKey . timeslot
-      , (.=) lessonDayKey  . day
+      [ (.=) lessonSlotKey . unSlot . timeslot
+      , (.=) lessonDayKey  . unDay . day
       , (.=) subjectKey    . subject
       ]
 
@@ -106,9 +108,15 @@ instance ToJSON Rule where
       <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
     where
       getTarget :: Target -> (Text, [(Text, Value)])
-      getTarget (Day d)    = ("day",   [ruleDayKey  .= d])
-      getTarget (Cell d s) = ("cell",  [ruleDayKey  .= d, ruleSlotKey .= s])
-      getTarget (Slot s)   = ("slot",  [ruleSlotKey .= s])
+      getTarget (TDay d)    = ("day",   [ruleDayKey  .= unDay d])
+      getTarget (TCell c)   = 
+        second 
+          ( sequenceA 
+            [ (ruleDayKey  .=) . unDay . fst
+            , (ruleSlotKey .=) . unSlot . snd
+            ]) 
+          ("cell", unCell c)
+      getTarget (TSlot s)   = ("slot",  [ruleSlotKey .= unSlot s])
 
 
 instance FromJSON Rule where
@@ -117,9 +125,12 @@ instance FromJSON Rule where
     <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
-      fromScope obj "day"  = Day  <$> obj .: ruleDayKey
-      fromScope obj "slot" = Slot <$> obj .: ruleSlotKey
-      fromScope obj "cell" = Cell <$> obj .: ruleDayKey <*> obj .: ruleSlotKey
+      fromScope obj "day"  = (TDay . Day)   <$> obj .: ruleDayKey
+      fromScope obj "slot" = (TSlot . Slot) <$> obj .: ruleSlotKey
+      fromScope obj "cell" = 
+        ((TCell . Cell) Comp..: curry (Day *** Slot)) 
+          <$> obj .: ruleDayKey 
+          <*> obj .: ruleSlotKey
       fromScope _   _      = error "unknown input"  -- I am so sorry
   parseJSON _         = mzero
 
@@ -177,11 +188,11 @@ formatSchedule hours = pack $ List.intercalate "\n" $ header : map formatDay all
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
-    formatLesson :: Timeslot -> String
+    formatLesson :: Cell -> String
     formatLesson i =
       printf ("%" ++ show cellWidth ++ "v") $ maybe [] (shortSubject . subject) (Map.lookup i hours)
 
     formatDay :: (Int, [Int]) -> String
-    formatDay (i, l) = List.intercalate " | " [formatLesson (j, i) | j <- l]
+    formatDay (i, l) = List.intercalate " | " [formatLesson $ Cell (Day j, Slot i) | j <- l]
 
     header = printf "Total Weight: %10v" (totalWeight hours)

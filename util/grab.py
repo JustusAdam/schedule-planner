@@ -5,9 +5,9 @@ import re
 import sys
 import os
 import json
+from itertools import count
 
-def grab_table_regex(semester):
-    return re.compile('<h1>{}\. Semester</h1>.*?<table>(.*?)</table>'.format(semester), flags=re.DOTALL)
+grab_table_regex = lambda semester: re.compile('<h1>{}\. Semester</h1>.*?<table>(.*?)</table>'.format(semester), flags=re.DOTALL)
 tr_regex = re.compile('<tr>(.*?)</tr>', flags=re.DOTALL)
 td_regex = re.compile('<td>(.*?)</td>', flags=re.DOTALL)
 a_regex = re.compile('<a .*?">(.*?)</a>', flags=re.DOTALL)
@@ -33,26 +33,15 @@ def splitter(s, a, b):
                 yield s2
 
 
-def inf_range(start):
-    n = start
-    while True:
-        yield n
-        n += 1
-
-
 def extract_data(string, semester):
+    table = grab_table_regex(semester).search(string).group(1)
 
-    regex1 = grab_table_regex(semester)
-    table = regex1.search(string).group(1)
-
-    _, *lessons = [a.group(1) for a in list(re.finditer(tr_regex, table))]
+    _, *raw_lessons = [a.group(1) for a in re.finditer(tr_regex, table)]
 
     lessons = (
-        list(
-            a.group(1)
-            for a in list(re.finditer(td_regex, l))
-        )
-        for l in lessons
+        a.group(1)
+        for a in re.finditer(td_regex, l)        
+        for l in raw_lessons
     )
 
     def l():
@@ -62,29 +51,19 @@ def extract_data(string, semester):
                 nmatch = br_regex.match(a[0])
             name = nmatch.group(1)
 
-            vl_numbers = inf_range(1)
+            vl_numbers = count(1)
 
-            s = apply_each(lambda b: list(splitter(b, '<br />', '<br/>')), a[6:9])
+            s = list(map(lambda b: list(splitter(b, '<br />', '<br/>')), a[6:9]))
 
-            for kind, day, slot in zip(*s):
-                if kind == "U":
-                    yield dict(
-                        subject=name + " UE",
-                        day=days[day.replace(' ', '')],
-                        slot=int(slot.replace('.', '').replace(' ', ''))
-                    )
-                elif kind == "V":
-                    yield dict(
-                        subject=name + " VL{}".format(next(vl_numbers)),
-                        day=days[day.replace(' ', '')],
-                        slot=int(slot.replace('.', '').replace(' ', ''))
-                    )
+            for kind, day, slot in zip(*s):    
+                
+                yield dict(
+                    subject=name + (" VL{}".format(next(vl_numbers)) if kind == "V" else " UE"),
+                    day=days[day.replace(' ', '')],
+                    slot=int(slot.replace('.', '').replace(' ', ''))
+                )
 
     return list(l())
-
-
-def apply_each(func, vals):
-    return tuple(func(v) for v in vals)
 
 
 def main():

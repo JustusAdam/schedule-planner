@@ -19,12 +19,14 @@ module SchedulePlanner.Calculator.Solver
   , totalWeight
   , time
   , Lesson (..)
-  , Timeslot
+  , Day(..)
+  , Slot(..)
+  , Cell(..)
   , MappedSchedule
   , MappedLessons
   ) where
 
-import           Data.Data     (Data)
+import           Control.Arrow ((&&&))
 import           Data.List     as List (sortBy, uncons)
 import qualified Data.Map      as Map (Map, empty, foldl, fromListWith, insert,
                                        keys, lookup, map, null)
@@ -33,12 +35,19 @@ import qualified Data.Ord      as Ord (comparing)
 import           Data.Typeable (Typeable)
 
 
+newtype Slot = Slot { unSlot :: Int } deriving (Eq, Show, Ord)
+
+newtype Day  = Day  { unDay :: Int } deriving (Eq, Show, Ord)
+
+newtype Cell = Cell { unCell :: (Day, Slot) } deriving (Eq, Show, Ord)
+
+
 -- | Base datastructure for representing lessons
-data Lesson s = Lesson { timeslot :: Int
-                       , day      :: Int
+data Lesson s = Lesson { timeslot :: Slot
+                       , day      :: Day
                        , weight   :: Int
                        , subject  :: s
-                       } deriving (Show, Eq, Ord, Typeable, Data)
+                       } deriving (Show, Eq, Ord, Typeable)
 
 
 {-|
@@ -50,21 +59,14 @@ type MappedLessons s  = Map.Map s [Lesson s]
 
 {-|
   type Alias for readability
-  (Slot, Day)
--}
-type Timeslot         = (Int, Int)
-
-
-{-|
-  type Alias for readability
   represents a schedule
 -}
-type MappedSchedule s = Map.Map Timeslot (Lesson s)
+type MappedSchedule s = Map.Map Cell (Lesson s)
 
 
 -- | Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
-time :: Lesson a -> Timeslot
-time = (,) <$> day <*> timeslot
+time :: Lesson a -> Cell
+time = Cell . (day &&& timeslot)
 
 
 -- | Convenience function to obtain the total weight of a particular Schedule
@@ -76,7 +78,7 @@ totalWeight = Map.foldl (+) 0 . Map.map weight
   Map a List of 'Lesson's to their respective subjects
 -}
 mapToSubject :: Ord s => [Lesson s] -> Map.Map s [Lesson s]
-mapToSubject = Map.fromListWith (++) . map ((,) <$> subject <*> (:[]))
+mapToSubject = Map.fromListWith (++) . map (subject &&& (:[]))
 
 
 {-|
@@ -99,8 +101,8 @@ calcFromMap mappedLessons
   | Map.null mappedLessons  = Nothing
   | otherwise               = reduceLists subjX sortedLessons Map.empty minList
   where
-    sortedLessons       = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
-    (subjX : minList)   = Map.keys sortedLessons
+    sortedLessons     = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
+    (subjX : minList) = Map.keys sortedLessons
 
 
 {-|
@@ -122,7 +124,12 @@ reduceLists s mappedLessons schedules subjects =
   Helper function for 'calcFromMap'
   represents a recusively called and forking calculation step
 -}
-calc' :: Ord s => Lesson s -> MappedLessons s -> MappedSchedule s -> [s] -> Maybe [MappedSchedule s]
+calc' :: Ord s
+      => Lesson s
+      -> MappedLessons s
+      -> MappedSchedule s
+      -> [s]
+      -> Maybe [MappedSchedule s]
 calc' x lists hourMap minList =
   maybe
     maybeEnd
@@ -137,6 +144,6 @@ calc' x lists hourMap minList =
 
     sideCalc element aMap = fromMaybe [] (reduceLists (subject element) lists aMap minList)
 
-    splitCalc old = return $ sideCalc x hourMap ++ sideCalc old newMap
+    splitCalc old         = return $ sideCalc x hourMap ++ sideCalc old newMap
 
-    newMap = Map.insert (time x) x hourMap
+    newMap                = Map.insert (time x) x hourMap

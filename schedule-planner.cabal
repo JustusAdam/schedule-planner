@@ -31,7 +31,8 @@ executable schedule-planner
     warp          >= 3.0,
     wai           >= 3.0,
     mtl           >= 2.2,
-    http-types    >= 0.8
+    http-types    >= 0.8,
+    composition   >= 1.0
   main-is: Main.hs
   buildable: True
   other-modules:
