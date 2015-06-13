@@ -10,4 +10,12 @@ Portability : POSIX
 
 No intrinsic use. Only harbors submodules.
 -}
-module SchedulePlanner () where
+module SchedulePlanner
+  ( reportAndPrint
+  , serverCalculation
+  , server
+  ) where
+
+
+import           SchedulePlanner.App    (reportAndPrint, serverCalculation)
+import           SchedulePlanner.Server (server)

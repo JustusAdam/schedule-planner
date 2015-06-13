@@ -12,7 +12,7 @@ main function and outside communication for this software.
 This module takes care of reading all input and checking for correctness
 as well as providing useful feedback upon encountering errors.
 -}
-module Main 
+module Main
   ( main
   , DirectCallOptions(..)
   , CommonOptions(..)
@@ -20,17 +20,17 @@ module Main
   ) where
 
 
-import           Data.ByteString.Lazy   (readFile)
-import           Data.Text              (pack)
-import           Options                (Options, defineOption, defineOptions,
-                                         optionDefault, optionDescription,
-                                         optionLongFlags, optionShortFlags,
-                                         optionType_bool, optionType_int,
-                                         optionType_maybe, optionType_string,
-                                         runSubcommand, subcommand)
-import           Prelude                hiding (readFile)
-import           SchedulePlanner.App    (reportAndPrint, serverCalculation)
-import qualified SchedulePlanner.Server as Server (server)
+import           Data.ByteString.Lazy (readFile)
+import           Data.Text            (pack)
+import           Options              (Options, defineOption, defineOptions,
+                                       optionDefault, optionDescription,
+                                       optionLongFlags, optionShortFlags,
+                                       optionType_bool, optionType_int,
+                                       optionType_maybe, optionType_string,
+                                       runSubcommand, subcommand)
+import           Prelude              hiding (readFile)
+import qualified SchedulePlanner      as SP (reportAndPrint, server,
+                                             serverCalculation)
 
 
 {-|
@@ -148,11 +148,11 @@ directCall
       , outputFile = outFile
       })
   _
-  = readFile ifile >>= reportAndPrint (pack outForm) v outFile
+  = readFile ifile >>= SP.reportAndPrint (pack outForm) v outFile
 
 
 {-|
   Main function of the "serve" subcommand.
 -}
 serverMain :: CommonOptions -> ServerOptions -> [String] -> IO ()
-serverMain _ (ServerOptions { port = p }) _ = Server.server p serverCalculation
+serverMain _ (ServerOptions { port = p }) _ = SP.server p SP.serverCalculation

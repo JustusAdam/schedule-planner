@@ -32,7 +32,7 @@ import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, elems, lookup, toList)
 import           Data.Text                  as T (Text, pack)
 import           SchedulePlanner.Calculator (Cell (..), Day (..), Lesson (..),
-                                             MappedSchedule, Rule (..),
+                                             MappedSchedule(..), Rule (..),
                                              Slot (..), Target (..), timeslot,
                                              totalWeight)
 import           Text.Printf                (printf)
@@ -108,7 +108,7 @@ instance ToJSON Rule where
       <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
     where
       getTarget :: Target -> (Text, [(Text, Value)])
-      getTarget (TDay d)    = ("day",   [ruleDayKey  .= unDay d])
+      getTarget (TDay d)    = ("day", [ruleDayKey  .= unDay d])
       getTarget (TCell c)   = 
         second 
           ( sequenceA 
@@ -116,7 +116,7 @@ instance ToJSON Rule where
             , (ruleSlotKey .=) . unSlot . snd
             ]) 
           ("cell", unCell c)
-      getTarget (TSlot s)   = ("slot",  [ruleSlotKey .= unSlot s])
+      getTarget (TSlot s)   = ("slot", [ruleSlotKey .= unSlot s])
 
 
 instance FromJSON Rule where
@@ -155,7 +155,7 @@ instance ToJSON DataFile where
 -}
 scheduleToJson :: ToJSON a => MappedSchedule a -> Value
 scheduleToJson = object . sequenceA
-  [ (.=) lessonKey . Map.elems
+  [ (.=) lessonKey . Map.elems . unMapSchedule
   , (.=) "weight"  . totalWeight
   ]
 
@@ -184,7 +184,7 @@ shortSubject = reverse . take cellWidth . reverse . show
   and more importantly, readable Text
 -}
 formatSchedule :: Show s => MappedSchedule s -> Text
-formatSchedule hours = pack $ List.intercalate "\n" $ header : map formatDay allHours
+formatSchedule (MappedSchedule hours) = pack $ List.intercalate "\n" $ header : map formatDay allHours
   where
     allHours = [(i, [1..slotsPerDay]) | i <- [1..daysPerWeek]]
 
@@ -195,4 +195,4 @@ formatSchedule hours = pack $ List.intercalate "\n" $ header : map formatDay all
     formatDay :: (Int, [Int]) -> String
     formatDay (i, l) = List.intercalate " | " [formatLesson $ Cell (Day j, Slot i) | j <- l]
 
-    header = printf "Total Weight: %10v" (totalWeight hours)
+    header = printf "Total Weight: %10v" (totalWeight (MappedSchedule hours))

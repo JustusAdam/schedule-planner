@@ -27,7 +27,7 @@ import           Data.String                (fromString)
 import           Data.Text                  as T (Text, append, pack)
 import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn, writeFile)
-import           SchedulePlanner.Calculator (MappedSchedule, calcFromMap,
+import           SchedulePlanner.Calculator (MappedSchedule(..), MappedLessons(..), calcFromMap,
                                              mapToSubject, weigh)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
                                              formatSchedule, scheduleToJson,
@@ -85,7 +85,7 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
           tell "\n"
 
           tell "Legend:"
-          _       <- mapM (tell . pack . show . (shortSubject &&& id) ) (Map.keys mappedLessons)
+          _       <- mapM (tell . pack . show . (shortSubject &&& id) ) (Map.keys mlRaw)
 
 
           tell "\n"
@@ -93,7 +93,7 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
           return ()
 
         "json" -> do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap Map.elems calculated
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap Map.elems $ map unMapSchedule calculated
           return ()
 
         _ -> tell "invalid output format")
@@ -102,7 +102,7 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
 
   where
     weighted      = weigh rules lessons
-    mappedLessons = mapToSubject weighted
+    mappedLessons@(MappedLessons mlRaw) = mapToSubject weighted
     pc            = mapM (tell . append "\n\n" . formatSchedule)
 
 

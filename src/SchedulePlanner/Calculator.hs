@@ -21,7 +21,8 @@ module SchedulePlanner.Calculator
   , Target(..)
   , Rule(..)
   , mapToSubject
-  , MappedSchedule
+  , MappedSchedule(..)
+  , MappedLessons(..)
   , weigh
 ) where
 
