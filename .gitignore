@@ -16,3 +16,5 @@ dist
 .DS_Store
 *.json
 __pycache__/
+cabal.sandbox.config
+.cabal-sandbox/

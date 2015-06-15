@@ -19,6 +19,7 @@ import           Network.Wai                  (responseLBS, lazyRequestBody,
 import           Data.ByteString.Lazy         (ByteString)
 import           Network.HTTP.Types           (ok200, methodPost, methodOptions,
                                               imATeaPot418)
+import SchedulePlanner.Scraper
 
 
 {-|

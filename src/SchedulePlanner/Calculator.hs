@@ -24,7 +24,7 @@ module SchedulePlanner.Calculator
   , MappedSchedule(..)
   , MappedLessons(..)
   , weigh
-) where
+  ) where
 
 import SchedulePlanner.Calculator.Scale
 import SchedulePlanner.Calculator.Solver

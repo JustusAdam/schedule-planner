@@ -16,7 +16,7 @@ module SchedulePlanner.Calculator.Scale
   , Target(..)
   , calcMaps
   , WeightMap
-) where
+  ) where
 
 import           Control.Monad                     ((>=>))
 import           Control.Monad.Trans.State         (State, get, put, runState)
@@ -52,11 +52,11 @@ data SimpleDynRule = SimpleDynRule { sDynTarget   :: Target
 
 
 -- | Type alias for more expressive function signature
-type WeightMap    = Map.Map Target Int
+newtype WeightMap    = WeightMap { unWeightMap :: Map.Map Target Int }
 
 
 -- | Type alias for structure holding the dynamic rules
-type DynRuleMap a = Map.Map Target [a]
+newtype DynRuleMap a = DynRuleMap { unDynRuleMap :: Map.Map Target [a] }
 
 
 -- | Scaffolding for a dynamic rule
@@ -66,8 +66,8 @@ class DynamicRule r where
 
 
 instance DynamicRule SimpleDynRule where
-  trigger _ wMap (SimpleDynRule targ sev) =
-    (Map.insertWith (+) targ sev wMap, SimpleDynRule targ sev)
+  trigger _ (WeightMap wMap) (SimpleDynRule targ sev) =
+    (WeightMap $ Map.insertWith (+) targ sev wMap, SimpleDynRule targ sev)
 
   getTriggerTarget = return.sDynTarget
 
@@ -87,20 +87,20 @@ reCalcMaps lesson = runState .
 {-|
   Stateful recalculation of the rule map triggered by a change.
 -}
-reCalcHelper :: (DynamicRule a, Ord k)
+reCalcHelper :: DynamicRule a
              => Lesson s
-             -> k
-             -> Map.Map k [a]
-             -> State WeightMap (Map.Map k [a])
+             -> Target
+             -> DynRuleMap a
+             -> State WeightMap (DynRuleMap a)
 reCalcHelper inserted key =
   maybe
     <$> return
-    <*> (\rMap rules -> do
+    <*> (\(DynRuleMap rMap) rules -> do
             s <- get
             let (newState, newRules) = mapAccumL (trigger inserted) s rules
-            put newState
-            return $ Map.insert key newRules rMap)
-    <*> Map.lookup key
+            put $ newState
+            return $ DynRuleMap $ Map.insert key newRules rMap)
+    <*> Map.lookup key . unDynRuleMap
 
 
 {-|
@@ -129,12 +129,14 @@ weighOne wm l =
   Find the full weight impact from the rules on a specific lesson.
 -}
 allTargeting :: Lesson s -> WeightMap -> Int
-allTargeting = (sum .: sequenceA) . sequenceA
+allTargeting = (sum .: (sequenceA <<.> unWeightMap)) . sequenceA
   (map (Map.findWithDefault 0 .)
     [ TSlot . timeslot
     , TDay . day
     , TCell . time
     ])
+  where
+    f <<.> g = \a -> f a . g
 
 
 {-|
@@ -142,7 +144,7 @@ allTargeting = (sum .: sequenceA) . sequenceA
   weighing afterwards
 -}
 calcMaps :: [Rule] -> WeightMap
-calcMaps = flip calcMapsStep Map.empty
+calcMaps = flip calcMapsStep (WeightMap Map.empty)
 
 
 {-|
@@ -150,4 +152,4 @@ calcMaps = flip calcMapsStep Map.empty
 -}
 calcMapsStep :: [Rule] -> WeightMap -> WeightMap
 calcMapsStep []               = id
-calcMapsStep (Rule t sev :xs) = calcMapsStep xs . Map.insertWith (+) t sev
+calcMapsStep (Rule t sev :xs) = calcMapsStep xs . WeightMap . Map.insertWith (+) t sev . unWeightMap
