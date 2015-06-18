@@ -22,6 +22,9 @@ extra-source-files: README.md
 Flag NoScraper
   Default: False
 
+Flag Static
+  Default: False
+
 
 executable schedule-planner
   if !flag(NoScraper)
@@ -72,12 +75,15 @@ executable schedule-planner
   hs-source-dirs: src
   if !flag(NoScraper)
     cpp-options: "-DNOSCRAPER"
-  ghc-options:
-    -Wall
-    -- Options for static compile
-    -- -static
-    -- -optl-pthread
-    -- -optl-static
+  if !flag(Static)
+    ghc-options:
+      -Wall
+  else
+    ghc-options:
+      -Wall
+      -static
+      -optl-pthread
+      -optl-static
 
 
 source-repository head

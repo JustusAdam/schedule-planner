@@ -1,5 +1,5 @@
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 {-|
 Module      : $Header$
 Description : functions necessary for deploying the application as a webservice
@@ -18,12 +18,14 @@ import           Data.ByteString.Lazy     (ByteString)
 import           Network.HTTP.Types       (imATeaPot418, methodOptions,
                                            methodPost, ok200)
 import           Network.Wai              (Application, lazyRequestBody,
-                                           requestMethod, responseLBS, remoteHost)
+                                           remoteHost, requestMethod,
+                                           responseLBS)
 import           Network.Wai.Handler.Warp (run)
 #ifndef NOSCRAPER
 import           SchedulePlanner.Scraper
 #endif
-import           System.IO                (IOMode(AppendMode), withFile, hPutStrLn)
+import           System.IO                (IOMode (AppendMode), hPutStrLn,
+                                           withFile)
 
 
 {-|
