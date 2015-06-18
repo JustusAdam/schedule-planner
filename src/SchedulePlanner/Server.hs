@@ -15,7 +15,6 @@ module SchedulePlanner.Server (server, app, ServerOptions(..)) where
 
 
 import           Data.ByteString.Lazy     (ByteString)
-import           Data.Composition         ((.:))
 import           Network.HTTP.Types       (imATeaPot418, methodOptions,
                                            methodPost, ok200)
 import           Network.Wai              (Application, lazyRequestBody,
