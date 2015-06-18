@@ -18,36 +18,18 @@ module SchedulePlanner.Calculator.Solver
   , mapToSubject
   , totalWeight
   , time
-  , Lesson (..)
-  , Day(..)
-  , Slot(..)
-  , Cell(..)
   , MappedSchedule(..)
   , MappedLessons(..)
   ) where
 
-import           Control.Arrow ((&&&))
-import           Data.List     as List (sortBy, uncons)
-import qualified Data.Map      as Map (Map, empty, foldl, fromListWith, insert,
-                                       keys, lookup, map, null)
-import           Data.Maybe    (fromMaybe)
-import qualified Data.Ord      as Ord (comparing)
-import           Data.Typeable (Typeable)
+import           Control.Arrow         ((&&&))
+import           Data.List             as List (sortBy, uncons)
+import qualified Data.Map              as Map (Map, empty, foldl, fromListWith,
+                                               insert, keys, lookup, map, null)
+import           Data.Maybe            (fromMaybe)
+import qualified Data.Ord              as Ord (comparing)
+import           SchedulePlanner.Types
 
-
-newtype Slot = Slot { unSlot :: Int } deriving (Eq, Show, Ord)
-
-newtype Day  = Day  { unDay :: Int } deriving (Eq, Show, Ord)
-
-newtype Cell = Cell { unCell :: (Day, Slot) } deriving (Eq, Show, Ord)
-
-
--- | Base datastructure for representing lessons
-data Lesson s = Lesson { timeslot :: Slot
-                       , day      :: Day
-                       , weight   :: Int
-                       , subject  :: s
-                       } deriving (Show, Eq, Ord, Typeable)
 
 
 {-|

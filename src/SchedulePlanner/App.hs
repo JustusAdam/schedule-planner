@@ -93,7 +93,7 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
           return ()
 
         "json" -> do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap Map.elems $ map unMapSchedule calculated
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap (Map.elems . unMapSchedule) calculated
           return ()
 
         _ -> tell "invalid output format")

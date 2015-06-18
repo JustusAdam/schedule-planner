@@ -19,7 +19,7 @@ module SchedulePlanner.Serialize
   , scheduleToJson
   ) where
 
-import           Control.Arrow              as Arrow (first, (***), second)
+import           Control.Arrow              as Arrow (first, second, (***))
 import           Control.Monad              (mzero)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
                                              Value (Object), decode,
@@ -31,10 +31,8 @@ import qualified Data.Composition           as Comp ((.:))
 import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, elems, lookup, toList)
 import           Data.Text                  as T (Text, pack)
-import           SchedulePlanner.Calculator (Cell (..), Day (..), Lesson (..),
-                                             MappedSchedule(..), Rule (..),
-                                             Slot (..), Target (..), timeslot,
-                                             totalWeight)
+import           SchedulePlanner.Calculator (MappedSchedule (..), totalWeight)
+import           SchedulePlanner.Types
 import           Text.Printf                (printf)
 
 
@@ -109,12 +107,12 @@ instance ToJSON Rule where
     where
       getTarget :: Target -> (Text, [(Text, Value)])
       getTarget (TDay d)    = ("day", [ruleDayKey  .= unDay d])
-      getTarget (TCell c)   = 
-        second 
-          ( sequenceA 
+      getTarget (TCell c)   =
+        second
+          ( sequenceA
             [ (ruleDayKey  .=) . unDay . fst
             , (ruleSlotKey .=) . unSlot . snd
-            ]) 
+            ])
           ("cell", unCell c)
       getTarget (TSlot s)   = ("slot", [ruleSlotKey .= unSlot s])
 
@@ -127,9 +125,9 @@ instance FromJSON Rule where
       fromScope :: Object -> Text -> Parser Target
       fromScope obj "day"  = (TDay . Day)   <$> obj .: ruleDayKey
       fromScope obj "slot" = (TSlot . Slot) <$> obj .: ruleSlotKey
-      fromScope obj "cell" = 
-        ((TCell . Cell) Comp..: curry (Day *** Slot)) 
-          <$> obj .: ruleDayKey 
+      fromScope obj "cell" =
+        ((TCell . Cell) Comp..: curry (Day *** Slot))
+          <$> obj .: ruleDayKey
           <*> obj .: ruleSlotKey
       fromScope _   _      = error "unknown input"  -- I am so sorry
   parseJSON _         = mzero
@@ -163,15 +161,6 @@ scheduleToJson = object . sequenceA
 -- |Convert a suitable Map to a JSON Value
 mapToJSON :: ToJSON a => Map.Map Text a -> Value
 mapToJSON = object . map (uncurry (.=)) . Map.toList
-
--- |Open a file and return the contents as parsed json
-getFromFile :: FilePath -> IO(Maybe DataFile)
-getFromFile = fmap decode . LBS.readFile
-
-
--- |Open a file and write json to it
-writeToFile :: ToJSON a => FilePath -> Map.Map Text a -> IO()
-writeToFile filename = LBS.writeFile filename . encode . mapToJSON
 
 
 -- |Shorten a subject to something printable

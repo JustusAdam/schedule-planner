@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-|
 Module      : $Header$
 Description : functions necessary for deploying the application as a webservice
@@ -10,29 +10,54 @@ Portability : POSIX
 
 Uses happstack and blaze to create a deployable service instance of this software.
 -}
-module SchedulePlanner.Server (server, app) where
+module SchedulePlanner.Server (server, app, ServerOptions(..)) where
 
 
-import           Network.Wai.Handler.Warp     (run)
-import           Network.Wai                  (responseLBS, lazyRequestBody,
-                                              Application, requestMethod)
-import           Data.ByteString.Lazy         (ByteString)
-import           Network.HTTP.Types           (ok200, methodPost, methodOptions,
-                                              imATeaPot418)
-import SchedulePlanner.Scraper
+import           Data.ByteString.Lazy     (ByteString)
+import           Data.Composition         ((.:))
+import           Network.HTTP.Types       (imATeaPot418, methodOptions,
+                                           methodPost, ok200)
+import           Network.Wai              (Application, lazyRequestBody,
+                                           requestMethod, responseLBS, remoteHost)
+import           Network.Wai.Handler.Warp (run)
+import           SchedulePlanner.Scraper
+import           System.IO                (IOMode(AppendMode), withFile, hPutStrLn)
+
+
+{-|
+  Options used for the "serve" subcommand.
+-}
+data ServerOptions = ServerOptions
+  { port    :: Int -- ^ default 'defaultServerPort'
+  , logFile :: Maybe FilePath
+  }
 
 
 {-|
   The 'Application' used for the server instance.
 -}
-app :: (ByteString -> ByteString) -> Application
-app app' request respond
+app :: ServerOptions -> (ByteString -> ByteString) -> Application
+app opts app' request respond
   | rMethod == methodPost =
+    logPureReq ("New POST request from " ++ (show $ remoteHost request)) >>
     lazyRequestBody request >>=
       respond . responseLBS ok200 headers . app'
   | rMethod == methodOptions = respond $ responseLBS ok200 headers "Bring it!"
-  | otherwise = respond $ responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?"
+  | otherwise = 
+    logPureReq ("Unhandleable request: " ++ show request) >> 
+    respond (responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?")
   where
+    logAction logfile = withFile logfile AppendMode . flip hPutStrLn
+    logPureReq message =
+      maybe 
+        (return ())
+        (flip logAction message)
+        (logFile opts)
+    logIOReq messageGetter =
+      maybe
+        (return ())
+        ((>>=) messageGetter . logAction)
+        (logFile opts)
     rMethod = requestMethod request
     headers = [
         ("Access-Control-Allow-Origin", "http://justus.science"),
@@ -44,5 +69,5 @@ app app' request respond
 {-|
   Run the server.
 -}
-server :: Int -> (ByteString -> ByteString) -> IO ()
-server port = run port . app
+server :: ServerOptions -> (ByteString -> ByteString) -> IO ()
+server opts@(ServerOptions { port = port }) = run port . app opts

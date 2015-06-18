@@ -18,6 +18,7 @@ module SchedulePlanner.Calculator.Scale
   , WeightMap
   ) where
 
+import           Control.Arrow                     (second)
 import           Control.Monad                     ((>=>))
 import           Control.Monad.Trans.State         (State, get, put, runState)
 import           Data.Composition                  ((.:))
@@ -26,29 +27,8 @@ import qualified Data.Map                          as Map (Map, empty,
                                                            findWithDefault,
                                                            insert, insertWith,
                                                            lookup)
-import           Data.Typeable                     (Typeable)
-import           SchedulePlanner.Calculator.Solver (Cell (..), Day (..),
-                                                    Lesson (..), Slot (..),
-                                                    time, timeslot)
-
-
--- | The scope and target a 'Rule' whishes to influence
-data Target = TSlot Slot
-            | TDay Day
-            | TCell Cell
-            deriving (Show, Typeable, Ord, Eq)
-
-
--- | Weight increase by 'severity' for all 'Lesson's in target
-data Rule = Rule { target   :: Target
-                 , severity :: Int
-                 } deriving (Show, Typeable)
-
-
--- | Dynamic rule with only one condition
-data SimpleDynRule = SimpleDynRule { sDynTarget   :: Target
-                                   , sDynSeverity :: Int
-                                   } deriving (Show)
+import           SchedulePlanner.Calculator.Solver (time)
+import           SchedulePlanner.Types
 
 
 -- | Type alias for more expressive function signature
@@ -73,10 +53,10 @@ instance DynamicRule SimpleDynRule where
 
 
 -- | Recalculate the lesson weight tuple as a result of dynamic rules
-reCalcMaps :: DynamicRule a 
-           => Lesson s 
+reCalcMaps :: DynamicRule a
+           => Lesson s
            -> DynRuleMap a
-           -> WeightMap 
+           -> WeightMap
            -> (DynRuleMap a, WeightMap)
 reCalcMaps lesson = runState .
   (reCalcHelper lesson (TSlot (timeslot lesson)) >=>
@@ -93,14 +73,41 @@ reCalcHelper :: DynamicRule a
              -> DynRuleMap a
              -> State WeightMap (DynRuleMap a)
 reCalcHelper inserted key =
-  maybe
-    <$> return
-    <*> (\(DynRuleMap rMap) rules -> do
-            s <- get
-            let (newState, newRules) = mapAccumL (trigger inserted) s rules
-            put $ newState
-            return $ DynRuleMap $ Map.insert key newRules rMap)
-    <*> Map.lookup key . unDynRuleMap
+  maybe <$> return <*> f . unDynRuleMap <*> Map.lookup key . unDynRuleMap
+  where
+    f rMap rules = do
+      currentWeightMap <- get
+      let (newState, newRules) = mapAccumL (trigger inserted) currentWeightMap rules
+      put newState
+      return $ DynRuleMap $ Map.insert key newRules rMap
+
+
+nonStateReCalcMaps :: DynamicRule a
+                   => Lesson s
+                   -> WeightMap
+                   -> DynRuleMap a
+                   -> (WeightMap, DynRuleMap a)
+nonStateReCalcMaps lesson wm drm =
+  foldr (nonStateReCalcHelper lesson) (wm, drm) (constrTargets lesson)  
+
+
+nonStateReCalcHelper :: DynamicRule a
+                     => Lesson s
+                     -> Target
+                     -> (WeightMap, DynRuleMap a)
+                     -> (WeightMap, DynRuleMap a)
+nonStateReCalcHelper inserted key (wm, pdrm@(DynRuleMap drm)) =
+  maybe (wm, pdrm) f $ Map.lookup key drm
+  where
+    f = second (DynRuleMap . flip (Map.insert key) drm) . mapAccumL (trigger inserted) wm
+
+
+constrTargets :: Lesson a -> [Target]
+constrTargets = sequenceA 
+      [ TSlot . timeslot
+      , TDay . day
+      , TCell . time
+      ]
 
 
 {-|
@@ -129,12 +136,8 @@ weighOne wm l =
   Find the full weight impact from the rules on a specific lesson.
 -}
 allTargeting :: Lesson s -> WeightMap -> Int
-allTargeting = (sum .: (sequenceA <<.> unWeightMap)) . sequenceA
-  (map (Map.findWithDefault 0 .)
-    [ TSlot . timeslot
-    , TDay . day
-    , TCell . time
-    ])
+allTargeting = (sum .: (sequenceA <<.> unWeightMap)) . 
+  (map (Map.findWithDefault 0) . constrTargets)
   where
     f <<.> g = \a -> f a . g
 

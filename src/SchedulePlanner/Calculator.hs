@@ -14,12 +14,6 @@ module SchedulePlanner.Calculator
   ( calcFromMap
   , calcFromList
   , totalWeight
-  , Lesson (..)
-  , Cell(..)
-  , Slot(..)
-  , Day(..)
-  , Target(..)
-  , Rule(..)
   , mapToSubject
   , MappedSchedule(..)
   , MappedLessons(..)

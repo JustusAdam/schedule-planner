@@ -16,7 +16,7 @@ module Main
   ( main
   , DirectCallOptions(..)
   , CommonOptions(..)
-  , ServerOptions(..)
+  , SP.ServerOptions(..)
   ) where
 
 
@@ -30,7 +30,7 @@ import           Options              (Options, defineOption, defineOptions,
                                        runSubcommand, subcommand)
 import           Prelude              hiding (readFile)
 import qualified SchedulePlanner      as SP (reportAndPrint, server,
-                                             serverCalculation)
+                                             serverCalculation, ServerOptions(..))
 
 
 {-|
@@ -105,22 +105,20 @@ instance Options DirectCallOptions where
                    })
 
 
-{-|
-  Options used for the "serve" subcommand.
--}
-data ServerOptions = ServerOptions
-  { port :: Int -- ^ default 'defaultServerPort'
-  }
-
-
-instance Options ServerOptions where
-  defineOptions = ServerOptions
+instance Options SP.ServerOptions where
+  defineOptions = SP.ServerOptions
     <$> defineOption
           optionType_int
           (\o -> o { optionLongFlags   = ["port"]
                    , optionShortFlags  = "p"
                    , optionDescription = "The port to run the server on"
                    , optionDefault     = defaultServerPort
+                   })
+    <*> defineOption
+          (optionType_maybe optionType_string)
+          (\o -> o { optionLongFlags   = [ "logfile" ]
+                   , optionShortFlags  = "l"
+                   , optionDescription = "Set a logfile to enable server request logging"
                    })
 
 
@@ -154,5 +152,5 @@ directCall
 {-|
   Main function of the "serve" subcommand.
 -}
-serverMain :: CommonOptions -> ServerOptions -> [String] -> IO ()
-serverMain _ (ServerOptions { port = p }) _ = SP.server p SP.serverCalculation
+serverMain :: CommonOptions -> SP.ServerOptions -> [String] -> IO ()
+serverMain _ so _ = SP.server so SP.serverCalculation

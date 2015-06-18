@@ -14,8 +14,9 @@ module SchedulePlanner
   ( reportAndPrint
   , serverCalculation
   , server
+  , ServerOptions(..)
   ) where
 
 
 import           SchedulePlanner.App    (reportAndPrint, serverCalculation)
-import           SchedulePlanner.Server (server)
+import           SchedulePlanner.Server (server, ServerOptions(..))

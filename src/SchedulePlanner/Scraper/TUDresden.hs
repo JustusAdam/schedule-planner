@@ -5,20 +5,24 @@ module SchedulePlanner.Scraper.TUDresden (scrapeTuDresden) where
 import           Control.Arrow
 import           Control.Monad
 import           Data.Bool
-import qualified Data.Map                   as Map
+import qualified Data.Map              as Map
 import           Data.Maybe
-import qualified Data.Text                  as T
+import qualified Data.Text             as T
 import           Data.Text.ICU
-import           Debug.Trace                (traceShow)
 import           Network.HTTP
 import           Network.Stream
-import           SchedulePlanner.Calculator (Day (..), Lesson (..), Slot (..))
+import           SchedulePlanner.Types (Day (..), Lesson (..), Slot (..))
 
 
-grabTableRegex semester = regex [DotAll] $ "<h1>" `T.append` T.pack (show semester) `T.append` ". Semester</h1>.*?<table>(.*?)</table>"
+grabTableRegex :: Int -> Regex
+grabTableRegex = regex [DotAll] . T.append "<h1>" . flip T.append ". Semester</h1>.*?<table>(.*?)</table>" . T.pack . show
+trRegex :: Regex
 trRegex = regex [DotAll] "<tr>(.*?)</tr>"
+tdRegex :: Regex
 tdRegex = regex [DotAll] "<td>(.*?)</td>"
+aRegex  :: Regex
 aRegex  = regex [DotAll] "<a .*?\">(.*?)</a>"
+brRegex :: Regex
 brRegex = regex [DotAll] " (.*?)<br ?/>"
 
 
@@ -35,8 +39,17 @@ days = Map.fromList
 
 
 uncons :: [a] -> Maybe (a, [a])
-uncons [] = Nothing
+uncons []     = Nothing
 uncons (a:as) = Just (a,as)
+
+
+retry :: Int -> IO (Either a b) -> IO (Either a b)
+retry i a = a >>= doIt i
+  where
+    doIt _ v@(Right _) = return v
+    doIt i v@(Left _)
+      | i <= 0    = return v
+      | otherwise = a >>= doIt (i-1)
 
 
 tuDresdenRequestUrl :: Request_String
@@ -53,8 +66,8 @@ getPage = simpleHTTP tuDresdenRequestUrl
 
 handleSubject :: [T.Text] -> [Lesson T.Text]
 handleSubject (a:_:_:_:_:_:b:c:d:_) =
-  maybe [] id $ do
-    name <- maybe (find brRegex a) Just (find aRegex a) >>= group 1
+  fromMaybe [] $ do
+    name <- find brRegex a `mplus` find aRegex a >>= group 1
     return $ fst $ foldr (flip $ uncurry (handleLesson name)) ([], 1) $ zip3 (splitBr b) (splitBr c) (splitBr d)
   where
     splitBr = join . map (T.splitOn "<br/>") . T.splitOn "<br />"
@@ -66,39 +79,30 @@ handleLesson :: T.Text -> [Lesson T.Text] -> Int -> (T.Text, T.Text, T.Text) -> 
 handleLesson name other lectureNumber (ckind, cday, cslot) =
   uncurry (***) (maybe (id, id) ((:) *** (+)) calculationResult) (other, lectureNumber)
   where
-    calculationResult = constructLesson <$> Map.lookup (T.replace " " "" cday) days
+    calculationResult = constructLesson <$> Map.lookup (T.filter (== ' ') cday) days
 
     constructLesson mday =
       ( Lesson
         { subject  = name `T.append` identifier
         , day      = Day mday
-        , timeslot = Slot $ read $ T.unpack $ T.replace "." "" $ T.replace " " "" cslot
+        , timeslot = Slot $ read $ T.unpack $ T.filter (`elem` [' ', '.']) cslot
+        , weight   = 0
         }
       , bool 0 1 isLecture)
     isLecture  = ckind == "V"
-    exerciseID = "UE"
+    exerciseID = " UE"
     lectureID  = " VL" `T.append` T.pack (show lectureNumber)
     identifier = bool exerciseID lectureID isLecture
-handleLesson _ other lectureNumber a = (other, lectureNumber)
-
-
-justShow :: Show a => a -> a
-justShow a = traceShow a a
+handleLesson _ other lectureNumber _ = (other, lectureNumber)
 
 
 toLesson :: Int -> Response String -> Either String [Lesson T.Text]
 toLesson n (Response { rspBody = r }) = maybe (Left "No parse") (Right . join . map handleSubject) lessons
   where
-    table   = find (grabTableRegex n) (T.pack r) >>= group 1
-    rawLessons = snd <$> ((catMaybes . map (group 1) . findAll trRegex <$> table) >>= uncons)
-    lessons = map (\a -> traceShow (Prelude.length a) a) <$> map (catMaybes . map (group 1) . findAll tdRegex) <$> rawLessons
+    table      = find (grabTableRegex n) (T.pack r) >>= group 1
+    rawLessons = snd <$> ((mapMaybe (group 1) . findAll trRegex <$> table) >>= uncons)
+    lessons    = map (mapMaybe (group 1) . findAll tdRegex) <$> rawLessons
 
 
 scrapeTuDresden :: Int -> IO (Either String [Lesson T.Text])
-scrapeTuDresden n = getPage >>= retry stdRetries
-  where
-    retry :: Int -> Result (Response String) -> IO (Either String [Lesson T.Text])
-    retry _ (Right v) = return $ toLesson n v
-    retry 0 (Left err) = return $ Left $ show err
-    retry i _ = getPage >>= retry (i-1)
-
+scrapeTuDresden n = either (Left . show) (toLesson n) <$> retry stdRetries getPage

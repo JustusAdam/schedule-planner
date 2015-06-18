@@ -1,5 +1,5 @@
 module SchedulePlanner.Scraper
-  (
+  ( scrapeTuDresden
   ) where
 
 
