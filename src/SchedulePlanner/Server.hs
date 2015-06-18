@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 {-|
 Module      : $Header$
 Description : functions necessary for deploying the application as a webservice
@@ -20,7 +21,9 @@ import           Network.HTTP.Types       (imATeaPot418, methodOptions,
 import           Network.Wai              (Application, lazyRequestBody,
                                            requestMethod, responseLBS, remoteHost)
 import           Network.Wai.Handler.Warp (run)
+#ifdef NOSCRAPER
 import           SchedulePlanner.Scraper
+#endif
 import           System.IO                (IOMode(AppendMode), withFile, hPutStrLn)
 
 
