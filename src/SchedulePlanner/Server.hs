@@ -21,7 +21,7 @@ import           Network.HTTP.Types       (imATeaPot418, methodOptions,
 import           Network.Wai              (Application, lazyRequestBody,
                                            requestMethod, responseLBS, remoteHost)
 import           Network.Wai.Handler.Warp (run)
-#ifdef NOSCRAPER
+#ifndef NOSCRAPER
 import           SchedulePlanner.Scraper
 #endif
 import           System.IO                (IOMode(AppendMode), withFile, hPutStrLn)
@@ -46,13 +46,13 @@ app opts app' request respond
     lazyRequestBody request >>=
       respond . responseLBS ok200 headers . app'
   | rMethod == methodOptions = respond $ responseLBS ok200 headers "Bring it!"
-  | otherwise = 
-    logPureReq ("Unhandleable request: " ++ show request) >> 
+  | otherwise =
+    logPureReq ("Unhandleable request: " ++ show request) >>
     respond (responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?")
   where
     logAction logfile = withFile logfile AppendMode . flip hPutStrLn
     logPureReq message =
-      maybe 
+      maybe
         (return ())
         (flip logAction message)
         (logFile opts)
