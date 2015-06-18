@@ -9,7 +9,7 @@ Maintainer  : development@justusadam.com
 Stability   : experimental
 Portability : POSIX
 
-Uses happstack and blaze to create a deployable service instance of this software.
+Uses wai and warp to create a deployable web service instance of this software.
 -}
 module SchedulePlanner.Server (server, app, ServerOptions(..)) where
 

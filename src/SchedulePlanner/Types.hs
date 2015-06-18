@@ -1,3 +1,14 @@
+{-|
+Module      : $Header$
+Description : Basic types used internally by this software
+Copyright   : (c) Justus Adam, 2015
+License     : LGPL-3
+Maintainer  : development@justusadam.com
+Stability   : experimental
+Portability : POSIX
+
+Custom types the software uses.
+-}
 module SchedulePlanner.Types
   ( Slot(..)
   , Day(..)

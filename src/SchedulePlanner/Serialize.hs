@@ -30,7 +30,7 @@ import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import qualified Data.Composition           as Comp ((.:))
 import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, elems, lookup, toList)
-import           Data.Text                  as T (Text, pack)
+import           Data.Text                  as T (Text, pack, unpack)
 import           SchedulePlanner.Calculator (MappedSchedule (..), totalWeight)
 import           SchedulePlanner.Types
 import           Text.Printf                (printf)
@@ -64,6 +64,15 @@ lessonDayKey  = "day"
 -- | Key for the slot property in Rule objects in the json input
 lessonSlotKey :: Text
 lessonSlotKey = "slot"
+-- | Value used in the "scope" attribute in json to indicate a slot being the target
+scopeSlotVal :: Text
+scopeSlotVal = "slot"
+-- | Value used in the "scope" attribute in json to indicate a day being the target
+scopeDayVal :: Text
+scopeDayVal = "day"
+-- | Value used in the "scope" attribute in json to indicate a cell being the target
+scopeCellVal :: Text
+scopeCellVal = "cell"
 
 
 -- | How many days a week has
@@ -82,9 +91,9 @@ data DataFile = DataFile [Rule] [Lesson Text] deriving (Show)
 
 
 instance FromJSON a => FromJSON (Lesson a) where
-  parseJSON (Object o) = (\a b -> Lesson (Slot a) (Day b))
-    <$> o .: lessonSlotKey
-    <*> o .: lessonDayKey
+  parseJSON (Object o) = Lesson
+    <$> (Slot <$> o .: lessonSlotKey)
+    <*> (Day  <$> o .: lessonDayKey)
     <*> pure 0
     <*> o .: subjectKey
   parseJSON _          = mzero
@@ -123,13 +132,13 @@ instance FromJSON Rule where
     <*> o .: severityKey
     where
       fromScope :: Object -> Text -> Parser Target
-      fromScope obj "day"  = (TDay . Day)   <$> obj .: ruleDayKey
-      fromScope obj "slot" = (TSlot . Slot) <$> obj .: ruleSlotKey
-      fromScope obj "cell" =
-        ((TCell . Cell) Comp..: curry (Day *** Slot))
-          <$> obj .: ruleDayKey
-          <*> obj .: ruleSlotKey
-      fromScope _   _      = error "unknown input"  -- I am so sorry
+      fromScope obj scope
+        | scope == scopeDayVal  = (TDay  . Day)  <$> obj .: ruleDayKey
+        | scope == scopeSlotVal = (TSlot . Slot) <$> obj .: ruleSlotKey
+        | scope == scopeCellVal = ((TCell . Cell) Comp..: curry (Day *** Slot))
+                                      <$> obj .: ruleDayKey
+                                      <*> obj .: ruleSlotKey
+        | otherwise = error $ "unknown scope " ++ unpack scope  -- I am so sorry
   parseJSON _         = mzero
 
 
