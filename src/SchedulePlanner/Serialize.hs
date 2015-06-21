@@ -22,11 +22,10 @@ module SchedulePlanner.Serialize
 import           Control.Arrow              as Arrow (first, second, (***))
 import           Control.Monad              (mzero)
 import           Data.Aeson                 (FromJSON, Object, ToJSON,
-                                             Value (Object), decode,
-                                             eitherDecode, encode, object,
-                                             parseJSON, toJSON, (.:), (.=))
+                                             Value (Object), eitherDecode,
+                                             object, parseJSON, toJSON, (.:),
+                                             (.=))
 import           Data.Aeson.Types           (Parser)
-import qualified Data.ByteString.Lazy       as LBS (readFile, writeFile)
 import qualified Data.Composition           as Comp ((.:))
 import           Data.List                  as List (intercalate)
 import qualified Data.Map                   as Map (Map, elems, lookup, toList)
@@ -65,14 +64,17 @@ lessonDayKey  = "day"
 lessonSlotKey :: Text
 lessonSlotKey = "slot"
 -- | Value used in the "scope" attribute in json to indicate a slot being the target
-scopeSlotVal :: Text
-scopeSlotVal = "slot"
+scopeSlotVal  :: Text
+scopeSlotVal  = "slot"
 -- | Value used in the "scope" attribute in json to indicate a day being the target
-scopeDayVal :: Text
-scopeDayVal = "day"
+scopeDayVal   :: Text
+scopeDayVal   = "day"
 -- | Value used in the "scope" attribute in json to indicate a cell being the target
-scopeCellVal :: Text
-scopeCellVal = "cell"
+scopeCellVal  :: Text
+scopeCellVal  = "cell"
+
+scheduleWeightKey :: Text
+scheduleWeightKey = "weight"
 
 
 -- | How many days a week has
@@ -115,15 +117,15 @@ instance ToJSON Rule where
       <*> uncurry (:) . Arrow.first (scopeKey .=) . getTarget . target)
     where
       getTarget :: Target -> (Text, [(Text, Value)])
-      getTarget (TDay d)    = ("day", [ruleDayKey  .= unDay d])
+      getTarget (TDay d)    = (scopeDayVal, [ruleDayKey  .= unDay d])
       getTarget (TCell c)   =
         second
           ( sequenceA
             [ (ruleDayKey  .=) . unDay . fst
             , (ruleSlotKey .=) . unSlot . snd
             ])
-          ("cell", unCell c)
-      getTarget (TSlot s)   = ("slot", [ruleSlotKey .= unSlot s])
+          (scopeCellVal, unCell c)
+      getTarget (TSlot s)   = (scopeSlotVal, [ruleSlotKey .= unSlot s])
 
 
 instance FromJSON Rule where
@@ -163,7 +165,7 @@ instance ToJSON DataFile where
 scheduleToJson :: ToJSON a => MappedSchedule a -> Value
 scheduleToJson = object . sequenceA
   [ (.=) lessonKey . Map.elems . unMapSchedule
-  , (.=) "weight"  . totalWeight
+  , (.=) scheduleWeightKey . totalWeight
   ]
 
 

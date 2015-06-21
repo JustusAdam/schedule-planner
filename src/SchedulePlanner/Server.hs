@@ -15,7 +15,7 @@ module SchedulePlanner.Server (server, app, ServerOptions(..)) where
 
 
 import           Data.ByteString.Lazy     (ByteString)
-import           Network.HTTP.Types       (imATeaPot418, methodOptions,
+import           Network.HTTP.Types       (Header, imATeaPot418, methodOptions,
                                            methodPost, ok200)
 import           Network.Wai              (Application, lazyRequestBody,
                                            remoteHost, requestMethod,
@@ -28,6 +28,14 @@ import           System.IO                (IOMode (AppendMode), hPutStrLn,
                                            withFile)
 
 
+defaultHeaders :: [Header]
+defaultHeaders =
+  [ ("Access-Control-Allow-Origin" , "http://justus.science")
+  , ("Access-Control-Allow-Methods", "POST")
+  , ("Access-Control-Allow-Headers", "Content-Type")
+  ]
+
+
 {-|
   Options used for the "serve" subcommand.
 -}
@@ -35,6 +43,10 @@ data ServerOptions = ServerOptions
   { port    :: Int -- ^ default 'defaultServerPort'
   , logFile :: Maybe FilePath
   }
+
+
+writeToLog :: FilePath -> String -> IO ()
+writeToLog logfile = withFile logfile AppendMode . flip hPutStrLn
 
 
 {-|
@@ -63,15 +75,15 @@ app opts app' request respond
         ((>>=) messageGetter . logAction)
         (logFile opts)
     rMethod = requestMethod request
-    headers = [
-        ("Access-Control-Allow-Origin", "http://justus.science"),
-        ("Access-Control-Allow-Methods", "POST"),
-        ("Access-Control-Allow-Headers", "Content-Type")
-      ]
+    headers = defaultHeaders
 
 
 {-|
   Run the server.
 -}
 server :: ServerOptions -> (ByteString -> ByteString) -> IO ()
-server opts@(ServerOptions { port = port }) = run port . app opts
+server opts@(ServerOptions { port = port, logFile = logfile }) =
+  (>>) (maybe (return ()) logInit logfile) . run port . app opts
+  where
+    logInit = flip writeToLog $ "Server starting on port " ++ show port
+    
