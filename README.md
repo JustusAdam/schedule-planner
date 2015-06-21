@@ -17,7 +17,7 @@ Base algorithm seems to work, web UI source code can be found [here](https://git
 
 **The live [site](http://justus.science/schedule-planner-web) that uses this software as backend, Try it out!**
 
-Execute it with `schedule-planner calc JSON_INPUT_FILE`.
+Execute it with `schedule-planner calc -i JSON_INPUT_FILE`.
 
 By default it tries to obtain it's input data from `testsuite/test.json`, but you can specify any file as input using command line options.
 
