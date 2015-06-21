@@ -2,18 +2,22 @@
 
 Take an arbitrary list of weighted "lessons" and calculate the most ideal and valid layout for them based on weighing rules.
 
-Base algorithm seems to work, will add UI soon.
+Base algorithm seems to work, web UI source code can be found [here](https://github.com/JustusAdam/schedule-planner-web) .
+
+**There's a live site [here](http://justus.science/schedule-planner-web) that uses this software as backend, Try it out!**
 
 ## Install
 
 - get the software
     - clone the repository `git clone https://github.com/JustusAdam/schedule-planner`  
-    - or find the package on [Hackage](http://hackage.haskell.org/package/schedule-planner-0.1.0.0/candidate)
+    - or find the package on [Hackage](http://hackage.haskell.org/package/schedule-planner)
 - install using cabal `cabal install`
 
 ## Usage
 
-You may test it right now just executing the program `./dist/build/schedule-planner/schedule-planner`
+**The live [site](http://justus.science/schedule-planner-web) that uses this software as backend, Try it out!**
+
+Execute it with `schedule-planner calc JSON_INPUT_FILE`.
 
 By default it tries to obtain it's input data from `testsuite/test.json`, but you can specify any file as input using command line options.
 
