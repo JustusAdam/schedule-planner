@@ -1,4 +1,4 @@
-
+{-# LANGUAGE CPP #-}
 {-|
 Module      : $Header$
 Description : Collective umbrella module for the Application
@@ -15,8 +15,15 @@ module SchedulePlanner
   , serverCalculation
   , server
   , ServerOptions(..)
+#ifndef NOSCRAPER
+  , scrape
+  , ScraperOptions(..)
+#endif
   ) where
 
 
-import           SchedulePlanner.App    (reportAndPrint, serverCalculation)
-import           SchedulePlanner.Server (server, ServerOptions(..))
+import           SchedulePlanner.App     (reportAndPrint, serverCalculation)
+import           SchedulePlanner.Server  (ServerOptions (..), server)
+#ifndef NOSCRAPER
+import           SchedulePlanner.Scraper (ScraperOptions (..), scrape)
+#endif

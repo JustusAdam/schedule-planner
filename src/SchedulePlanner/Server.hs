@@ -21,9 +21,6 @@ import           Network.Wai              (Application, lazyRequestBody,
                                            remoteHost, requestMethod,
                                            responseLBS)
 import           Network.Wai.Handler.Warp (run)
-#ifndef NOSCRAPER
-import           SchedulePlanner.Scraper
-#endif
 import           System.IO                (IOMode (AppendMode), hPutStrLn,
                                            withFile)
 

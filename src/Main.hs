@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP               #-}
 {-|
 Module      : $Header$
 Description : Interface for schedule-planner
@@ -29,8 +30,12 @@ import           Options              (Options, defineOption, defineOptions,
                                        optionType_maybe, optionType_string,
                                        runSubcommand, subcommand)
 import           Prelude              hiding (readFile)
-import qualified SchedulePlanner      as SP (reportAndPrint, server,
-                                             serverCalculation, ServerOptions(..))
+import qualified SchedulePlanner      as SP (
+#ifndef NOSCRAPER
+                                             ScraperOptions (..), scrape,
+#endif
+                                             ServerOptions (..), reportAndPrint,
+                                             server, serverCalculation)
 
 
 {-|
@@ -122,6 +127,23 @@ instance Options SP.ServerOptions where
                    })
 
 
+#ifndef NOSCRAPER
+instance Options SP.ScraperOptions where
+  defineOptions = SP.ScraperOptions
+    <$> defineOption
+          (optionType_maybe optionType_int)
+          (\o -> o { optionShortFlags = "s"
+                   , optionLongFlags = ["semester"]
+                   , optionDescription = "which semester to scrape for"
+                   })
+    <*> defineOption
+          (optionType_maybe optionType_string)
+          (\o -> o { optionLongFlags = ["output-file"]
+                   , optionShortFlags = "o"
+                   , optionDescription = "Save the output to this file"
+                   })
+#endif
+
 {-|
   main function. Handles reading command line arguments, the json input
   and starts execution.
@@ -131,6 +153,9 @@ main =
   runSubcommand
     [ subcommand "calc" directCall
     , subcommand "serve" serverMain
+#ifndef NOSCRAPER
+    , subcommand "scrape" scraperMain
+#endif
     ]
 
 {-|
@@ -154,3 +179,11 @@ directCall
 -}
 serverMain :: CommonOptions -> SP.ServerOptions -> [String] -> IO ()
 serverMain _ so _ = SP.server so SP.serverCalculation
+
+
+#ifndef NOSCRAPER
+scraperMain :: CommonOptions -> SP.ScraperOptions -> [String] -> IO ()
+scraperMain _ so [u] = SP.scrape so u
+scraperMain _ _ _ = putStrLn "Failed"
+#endif
+
