@@ -184,6 +184,6 @@ serverMain _ so _ = SP.server so SP.serverCalculation
 #ifndef NOSCRAPER
 scraperMain :: CommonOptions -> SP.ScraperOptions -> [String] -> IO ()
 scraperMain _ so [u] = SP.scrape so u
-scraperMain _ _ _ = putStrLn "Failed"
+scraperMain _ _ _ = putStrLn "You need to provide a university which to scrape"
 #endif
 

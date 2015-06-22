@@ -46,11 +46,15 @@ writeToLog :: FilePath -> String -> IO ()
 writeToLog logfile = withFile logfile AppendMode . flip hPutStrLn
 
 
+logOrPrint :: String -> Maybe FilePath -> IO ()
+logOrPrint message = maybe (putStrLn message) (flip writeToLog message)
+
+
 {-|
   The 'Application' used for the server instance.
 -}
 app :: ServerOptions -> (ByteString -> ByteString) -> Application
-app opts app' request respond
+app (ServerOptions { logFile = logfile }) app' request respond
   | rMethod == methodPost =
     logPureReq ("New POST request from " ++ (show $ remoteHost request)) >>
     lazyRequestBody request >>=
@@ -60,17 +64,7 @@ app opts app' request respond
     logPureReq ("Unhandleable request: " ++ show request) >>
     respond (responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?")
   where
-    logAction logfile = withFile logfile AppendMode . flip hPutStrLn
-    logPureReq message =
-      maybe
-        (return ())
-        (flip logAction message)
-        (logFile opts)
-    logIOReq messageGetter =
-      maybe
-        (return ())
-        ((>>=) messageGetter . logAction)
-        (logFile opts)
+    logPureReq message = logOrPrint message logfile
     rMethod = requestMethod request
     headers = defaultHeaders
 
@@ -80,7 +74,9 @@ app opts app' request respond
 -}
 server :: ServerOptions -> (ByteString -> ByteString) -> IO ()
 server opts@(ServerOptions { port = port, logFile = logfile }) =
-  (>>) (maybe (return ()) logInit logfile) . run port . app opts
+  (>>) serverInit . run port . app opts
   where
-    logInit = flip writeToLog $ "Server starting on port " ++ show port
+    serverInit = do
+      putStrLn $ "Server starting on port " ++ show port
+      putStrLn $ "Logging: " ++ maybe ("disabled") ((++) "enbled, logging to " . show) logfile
     

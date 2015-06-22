@@ -27,7 +27,22 @@ Flag Static
 
 
 executable schedule-planner
-  if !flag(NoScraper)
+  if flag(NoScraper)
+    build-depends:
+      base          >= 4.7 && <5,
+      containers    >= 0.5,
+      aeson         >= 0.8,
+      options       >= 1.2,
+      transformers  >= 0.4,
+      bytestring    >= 0.10,
+      text          >= 1.2,
+      warp          >= 3.0,
+      wai           >= 3.0,
+      mtl           >= 2.2,
+      http-types    >= 0.8,
+      composition   >= 1.0,
+      HTTP          >= 4000.2
+  else
     build-depends:
       base          >= 4.7 && <5,
       containers    >= 0.5,
@@ -43,21 +58,6 @@ executable schedule-planner
       composition   >= 1.0,
       HTTP          >= 4000.2,
       text-icu      >= 0.7
-  else
-    build-depends:
-      base          >= 4.7 && <5,
-      containers    >= 0.5,
-      aeson         >= 0.8,
-      options       >= 1.2,
-      transformers  >= 0.4,
-      bytestring    >= 0.10,
-      text          >= 1.2,
-      warp          >= 3.0,
-      wai           >= 3.0,
-      mtl           >= 2.2,
-      http-types    >= 0.8,
-      composition   >= 1.0,
-      HTTP          >= 4000.2
   main-is: Main.hs
   buildable: True
   other-modules:
@@ -73,7 +73,7 @@ executable schedule-planner
     SchedulePlanner.Scraper.TUDresden
   default-language: Haskell2010
   hs-source-dirs: src
-  if !flag(NoScraper)
+  if flag(NoScraper)
     cpp-options: "-DNOSCRAPER"
   if !flag(Static)
     ghc-options:
