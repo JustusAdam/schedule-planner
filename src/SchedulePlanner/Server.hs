@@ -47,7 +47,7 @@ writeToLog logfile = withFile logfile AppendMode . flip hPutStrLn
 
 
 logOrPrint :: String -> Maybe FilePath -> IO ()
-logOrPrint message = maybe (putStrLn message) (flip writeToLog message)
+logOrPrint message = maybe (putStrLn message) (`writeToLog` message)
 
 
 {-|
@@ -56,7 +56,7 @@ logOrPrint message = maybe (putStrLn message) (flip writeToLog message)
 app :: ServerOptions -> (ByteString -> ByteString) -> Application
 app (ServerOptions { logFile = logfile }) app' request respond
   | rMethod == methodPost =
-    logPureReq ("New POST request from " ++ (show $ remoteHost request)) >>
+    logPureReq ("New POST request from " ++ show (remoteHost request)) >>
     lazyRequestBody request >>=
       respond . responseLBS ok200 headers . app'
   | rMethod == methodOptions = respond $ responseLBS ok200 headers "Bring it!"
@@ -78,5 +78,5 @@ server opts@(ServerOptions { port = port, logFile = logfile }) =
   where
     serverInit = do
       putStrLn $ "Server starting on port " ++ show port
-      putStrLn $ "Logging: " ++ maybe ("disabled") ((++) "enbled, logging to " . show) logfile
+      putStrLn $ "Logging: " ++ maybe "disabled" ((++) "enbled, logging to " . show) logfile
     

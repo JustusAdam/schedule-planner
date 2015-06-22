@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-|
 Module      : $Header$
 Description : Apply weighing rules to lessons
@@ -137,7 +136,7 @@ weighOne wm l =
 -}
 allTargeting :: Lesson s -> WeightMap -> Int
 allTargeting = (sum .: (sequenceA <<.> unWeightMap)) . 
-  (map (Map.findWithDefault 0) . constrTargets)
+  map (Map.findWithDefault 0) . constrTargets
   where
     f <<.> g = \a -> f a . g
 

@@ -36,7 +36,7 @@ scrape (ScraperOptions { semester = semester, outputFile = outputFile }) scraper
   handleScraperInput
   where
     scrapeAction scraper semester =
-      (putStrLn $ "Trying to scrape semester " ++ show semester ++ " for " ++ scraperName) >>
+      putStrLn ("Trying to scrape semester " ++ show semester ++ " for " ++ scraperName) >>
       serialize <$> scraper semester >>= doIO
     handleScraperInput = 
       maybe 

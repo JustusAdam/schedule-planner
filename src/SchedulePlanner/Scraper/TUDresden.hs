@@ -2,28 +2,33 @@
 module SchedulePlanner.Scraper.TUDresden (scrapeTuDresden) where
 
 
-import           Control.Arrow
-import           Control.Monad
-import           Data.Bool
-import qualified Data.Map              as Map
-import           Data.Maybe
-import qualified Data.Text             as T
-import           Data.Text.ICU
-import           Network.HTTP
-import           Network.Stream
+import           Control.Arrow         (first, second, (&&&), (***))
+import           Control.Monad         (join, mplus, (>=>))
+import           Data.Bool             (bool)
+import qualified Data.Map              as Map (fromList, Map, lookup)
+import           Data.Maybe            (catMaybes, fromMaybe, mapMaybe)
+import qualified Data.Text             as T (Text, append, filter, pack,
+                                             splitOn, unpack)
+import           Data.Text.ICU         (MatchOption (DotAll), Regex, find,
+                                        findAll, group, regex)
+import           Debug.Trace
+import           Network.HTTP          (Request_String, Response (Response),
+                                        getRequest, rspBody, simpleHTTP)
+import           Network.Stream        (Result)
 import           SchedulePlanner.Types (Day (..), Lesson (..), Slot (..))
+import           Text.Read             (readMaybe)
 
 
-grabTableRegex :: Int -> Regex
-grabTableRegex = regex [DotAll] . T.append "<h1>" . flip T.append ". Semester</h1>.*?<table>(.*?)</table>" . T.pack . show
-trRegex :: Regex
-trRegex = regex [DotAll] "<tr>(.*?)</tr>"
-tdRegex :: Regex
-tdRegex = regex [DotAll] "<td>(.*?)</td>"
-aRegex  :: Regex
-aRegex  = regex [DotAll] "<a .*?\">(.*?)</a>"
-brRegex :: Regex
-brRegex = regex [DotAll] " (.*?)<br ?/>"
+grabTableRegex :: Regex
+grabTableRegex = regex [DotAll] "<h1>(\\d). Semester</h1>.*?<table>(.*?)</table>"
+trRegex        :: Regex
+trRegex        = regex [DotAll] "<tr>(.*?)</tr>"
+tdRegex        :: Regex
+tdRegex        = regex [DotAll] "<td>(.*?)</td>"
+aRegex         :: Regex
+aRegex         = regex [DotAll] "<a .*?\">(.*?)</a>"
+brRegex        :: Regex
+brRegex        = regex [DotAll] " (.*?)<br ?/>"
 
 
 days :: Map.Map T.Text Int
@@ -64,10 +69,22 @@ getPage :: IO (Result (Response String))
 getPage = simpleHTTP tuDresdenRequestUrl
 
 
+ts a = traceShow a a
+
+t a = trace a a
+
+stripWhite :: T.Text -> T.Text
+stripWhite = T.filter (/= ' ')
+
+
+findRows :: T.Text -> [T.Text]
+findRows = mapMaybe (group 1) . findAll trRegex
+
+
 handleSubject :: [T.Text] -> [Lesson T.Text]
 handleSubject (a:_:_:_:_:_:b:c:d:_) =
   fromMaybe [] $ do
-    name <- find brRegex a `mplus` find aRegex a >>= group 1
+    name <- find aRegex a `mplus` find brRegex a >>= group 1
     return $ fst $ foldr (flip $ uncurry (handleLesson name)) ([], 1) $ zip3 (splitBr b) (splitBr c) (splitBr d)
   where
     splitBr = join . map (T.splitOn "<br/>") . T.splitOn "<br />"
@@ -77,31 +94,63 @@ handleSubject _ = []
 
 handleLesson :: T.Text -> [Lesson T.Text] -> Int -> (T.Text, T.Text, T.Text) -> ([Lesson T.Text], Int)
 handleLesson name other lectureNumber (ckind, cday, cslot) =
-  uncurry (***) (maybe (id, id) ((:) *** (+)) calculationResult) (other, lectureNumber)
-  where
-    calculationResult = constructLesson <$> Map.lookup (T.filter (== ' ') cday) days
 
-    constructLesson mday =
-      ( Lesson
-        { subject  = name `T.append` identifier
-        , day      = Day mday
-        , timeslot = Slot $ read $ T.unpack $ T.filter (`elem` [' ', '.']) cslot
-        , weight   = 0
-        }
-      , bool 0 1 isLecture)
-    isLecture  = ckind == "V"
+  uncurry (***) (maybe (id, id) ((:) *** (+)) calculationResult) (other, lectureNumber)
+  
+  where
+    calculationResult = do
+      mday  <- Map.lookup (stripWhite cday) days
+      rslot <- readMaybe $ T.unpack $ T.filter (not . flip elem [' ', '.']) cslot
+      return (Lesson
+              { subject  = name `T.append` identifier
+              , day      = Day mday
+              , timeslot = Slot rslot
+              , weight   = 0
+              }
+            , bool 0 1 isLecture)
+
+    isLecture  = stripWhite ckind == "V"
     exerciseID = " UE"
     lectureID  = " VL" `T.append` T.pack (show lectureNumber)
     identifier = bool exerciseID lectureID isLecture
+
 handleLesson _ other lectureNumber _ = (other, lectureNumber)
 
 
-toLesson :: Int -> Response String -> Either String [Lesson T.Text]
-toLesson n (Response { rspBody = r }) = maybe (Left "No parse") (Right . join . map handleSubject) lessons
+flatten2 :: Maybe a -> Maybe b -> Maybe (a, b)
+flatten2 (Just a) (Just b) = return (a,b)
+flatten2 _        _        = Nothing
+
+
+associateTables :: T.Text -> [(Int, T.Text)]
+associateTables source =
+
+  cleanMaybes $ findAccociations <$> rawTables
+  
   where
-    table      = find (grabTableRegex n) (T.pack r) >>= group 1
-    rawLessons = snd <$> ((mapMaybe (group 1) . findAll trRegex <$> table) >>= uncons)
-    lessons    = map (mapMaybe (group 1) . findAll tdRegex) <$> rawLessons
+  
+    cleanMaybes      = catMaybes . fmap (uncurry flatten2)
+    findAccociations = (group 1 >=> convertNumber) &&& group 2
+    convertNumber    = readMaybe . T.unpack
+    rawTables        = findAll grabTableRegex source
+
+
+toLesson :: Int -> Response String -> Either String [Lesson T.Text]
+toLesson n (Response { rspBody = r }) = 
+  maybe (Left "No parse") (Right . join . map handleSubject) $ join $ lookup n tables
+  
+  where
+    
+    associatedTables :: [(Int, T.Text)]
+    associatedTables = associateTables $ T.pack r
+
+    tables           :: [(Int, Maybe [[T.Text]])]
+    tables           = fmap (second (fmap lessons . getRawLessons)) associatedTables
+
+    getRawLessons    :: T.Text -> Maybe [T.Text]
+    getRawLessons    = fmap snd . uncons . findRows
+
+    lessons          = fmap (mapMaybe (group 1) . findAll tdRegex)
 
 
 scrapeTuDresden :: Int -> IO (Either String [Lesson T.Text])

@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 {-|
 Module      : $Header$
 Description : Calculate schedules
