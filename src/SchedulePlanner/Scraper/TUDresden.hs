@@ -6,7 +6,7 @@ import           Control.Arrow         (first, second, (&&&), (***))
 import           Control.Monad         (join, mplus, (>=>))
 import           Data.Bool             (bool)
 import qualified Data.Map              as Map (fromList, Map, lookup)
-import           Data.Maybe            (catMaybes, fromMaybe, mapMaybe)
+import           Data.Maybe            (catMaybes, fromMaybe, mapMaybe, isJust)
 import qualified Data.Text             as T (Text, append, filter, pack,
                                              splitOn, unpack)
 import           Data.Text.ICU         (MatchOption (DotAll), Regex, find,
@@ -17,6 +17,7 @@ import           Network.HTTP          (Request_String, Response (Response),
 import           Network.Stream        (Result)
 import           SchedulePlanner.Types (Day (..), Lesson (..), Slot (..))
 import           Text.Read             (readMaybe)
+import           SchedulePlanner.Scraper.Base
 
 
 grabTableRegex :: Regex
@@ -96,7 +97,7 @@ handleLesson :: T.Text -> [Lesson T.Text] -> Int -> (T.Text, T.Text, T.Text) -> 
 handleLesson name other lectureNumber (ckind, cday, cslot) =
 
   uncurry (***) (maybe (id, id) ((:) *** (+)) calculationResult) (other, lectureNumber)
-  
+
   where
     calculationResult = do
       mday  <- Map.lookup (stripWhite cday) days
@@ -114,8 +115,6 @@ handleLesson name other lectureNumber (ckind, cday, cslot) =
     lectureID  = " VL" `T.append` T.pack (show lectureNumber)
     identifier = bool exerciseID lectureID isLecture
 
-handleLesson _ other lectureNumber _ = (other, lectureNumber)
-
 
 flatten2 :: Maybe a -> Maybe b -> Maybe (a, b)
 flatten2 (Just a) (Just b) = return (a,b)
@@ -126,26 +125,33 @@ associateTables :: T.Text -> [(Int, T.Text)]
 associateTables source =
 
   cleanMaybes $ findAccociations <$> rawTables
-  
+
   where
-  
+
     cleanMaybes      = catMaybes . fmap (uncurry flatten2)
     findAccociations = (group 1 >=> convertNumber) &&& group 2
     convertNumber    = readMaybe . T.unpack
     rawTables        = findAll grabTableRegex source
 
 
-toLesson :: Int -> Response String -> Either String [Lesson T.Text]
-toLesson n (Response { rspBody = r }) = 
-  maybe (Left "No parse") (Right . join . map handleSubject) $ join $ lookup n tables
-  
+toLesson :: [Int] -> Response String -> [Either String Semester]
+toLesson n (Response { rspBody = r })
+  | null n    = map (Right . Semester) $ mapMaybe (uncurry clean) tables
+  | otherwise = do
+    i <- n
+    case join $ lookup i tables of
+      Just c -> return $ return $ Semester (i, c)
+      Nothing -> return $ Left $ "Cannot find semester " ++ show i
+  -- maybe (Left "No parse") (Right . join . map handleSubject) $ lookup tables n
   where
-    
+    clean i (Just c) = return (i, c)
+    clean i Nothing = Nothing
+
     associatedTables :: [(Int, T.Text)]
     associatedTables = associateTables $ T.pack r
 
-    tables           :: [(Int, Maybe [[T.Text]])]
-    tables           = fmap (second (fmap lessons . getRawLessons)) associatedTables
+    tables           :: [(Int, Maybe [Lesson T.Text])]
+    tables           = fmap (second (fmap (join . map handleSubject . lessons) . getRawLessons)) associatedTables
 
     getRawLessons    :: T.Text -> Maybe [T.Text]
     getRawLessons    = fmap snd . uncons . findRows
@@ -153,5 +159,5 @@ toLesson n (Response { rspBody = r }) =
     lessons          = fmap (mapMaybe (group 1) . findAll tdRegex)
 
 
-scrapeTuDresden :: Int -> IO (Either String [Lesson T.Text])
-scrapeTuDresden n = either (Left . show) (toLesson n) <$> retry stdRetries getPage
+scrapeTuDresden :: [Int] -> IO (Either String [Either String Semester])
+scrapeTuDresden n = either (Left . show) (Right . toLesson n) <$> retry stdRetries getPage

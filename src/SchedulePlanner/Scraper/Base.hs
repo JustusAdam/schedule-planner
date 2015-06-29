@@ -5,4 +5,6 @@ import SchedulePlanner.Types
 import Data.Text
 
 
-type Scraper = (Int -> IO (Either String [Lesson Text]))
+newtype Semester = Semester { unSemester :: (Int, [Lesson Text]) }
+
+type Scraper = ([Int] -> IO (Either String [Either String Semester]))

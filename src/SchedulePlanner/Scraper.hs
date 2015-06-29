@@ -15,6 +15,7 @@ import           SchedulePlanner.Scraper.TUDresden (scrapeTuDresden)
 import           SchedulePlanner.Serialize         ()
 import           System.IO                         (IOMode (WriteMode),
                                                     withFile)
+import           Data.Either                       (rights)
 
 
 universities :: [(String, Scraper)]
@@ -26,30 +27,24 @@ toEither :: a -> Maybe b -> Either a b
 toEither message = maybe (Left message) return
 
 
-data ScraperOptions = ScraperOptions { semester   :: Maybe Int
+data ScraperOptions = ScraperOptions { semesters  :: [Int]
                                      , outputFile :: Maybe FilePath
                                      } deriving (Show)
 
 
 scrape :: ScraperOptions -> String -> IO ()
-scrape (ScraperOptions { semester = semester, outputFile = outputFile }) scraperName =
+scrape (ScraperOptions { semesters = semesters, outputFile = outputFile }) scraperName =
   handleScraperInput
   where
-    scrapeAction scraper semester =
-      putStrLn ("Trying to scrape semester " ++ show semester ++ " for " ++ scraperName) >>
-      serialize <$> scraper semester >>= doIO
-    handleScraperInput = 
-      maybe 
-        (putStrLn "This university is not supported (yet).") 
-        handleSemesterInput
-        (lookup scraperName universities)
-    handleSemesterInput scraper =
+    scrapeAction scraper =
+      putStrLn ("Trying to scrape semester " ++ show semesters ++ " for " ++ scraperName) >>
+      serialize <$> scraper semesters >>= doIO
+    handleScraperInput =
       maybe
-        (putStrLn "Please provide a semester.")
-        (scrapeAction scraper)
-        semester
-    serialize     = either fromString encode
+        (putStrLn "This university is not supported (yet).")
+        scrapeAction
+        (lookup scraperName universities)
+    serialize     = either fromString (encode . rights)
     writeConsole  = B.putStr . (`B.append` "\n")
     writeFile f   = withFile f WriteMode . flip B.hPutStr
     doIO          = maybe writeConsole writeFile outputFile
-

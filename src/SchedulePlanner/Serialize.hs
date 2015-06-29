@@ -33,6 +33,7 @@ import           Data.Text                  as T (Text, pack, unpack)
 import           SchedulePlanner.Calculator (MappedSchedule (..), totalWeight)
 import           SchedulePlanner.Types
 import           Text.Printf                (printf)
+import           SchedulePlanner.Scraper.Base
 
 
 
@@ -75,6 +76,9 @@ scopeCellVal  = "cell"
 
 scheduleWeightKey :: Text
 scheduleWeightKey = "weight"
+
+semesterNumberKey :: Text
+semesterNumberKey = "semester"
 
 
 -- | How many days a week has
@@ -156,6 +160,14 @@ instance ToJSON DataFile where
     object
       [ lessonKey .= l
       , ruleKey   .= r
+      ]
+
+
+instance ToJSON Semester where
+  toJSON (Semester (number, lessons)) =
+    object
+      [ lessonKey         .= lessons
+      , semesterNumberKey .= number
       ]
 
 

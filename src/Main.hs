@@ -28,7 +28,7 @@ import           Options              (Options, defineOption, defineOptions,
                                        optionLongFlags, optionShortFlags,
                                        optionType_bool, optionType_int,
                                        optionType_maybe, optionType_string,
-                                       runSubcommand, subcommand)
+                                       runSubcommand, subcommand, optionType_list)
 import           Prelude              hiding (readFile)
 import qualified SchedulePlanner      as SP (
 #ifndef NOSCRAPER
@@ -131,10 +131,10 @@ instance Options SP.ServerOptions where
 instance Options SP.ScraperOptions where
   defineOptions = SP.ScraperOptions
     <$> defineOption
-          (optionType_maybe optionType_int)
+          (optionType_list ',' optionType_int)
           (\o -> o { optionShortFlags = "s"
                    , optionLongFlags = ["semester"]
-                   , optionDescription = "which semester to scrape for"
+                   , optionDescription = "which semesters to scrape for"
                    })
     <*> defineOption
           (optionType_maybe optionType_string)
@@ -186,4 +186,3 @@ scraperMain :: CommonOptions -> SP.ScraperOptions -> [String] -> IO ()
 scraperMain _ so [u] = SP.scrape so u
 scraperMain _ _ _ = putStrLn "You need to provide a university which to scrape"
 #endif
-
