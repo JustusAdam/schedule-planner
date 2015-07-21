@@ -20,5 +20,5 @@ module SchedulePlanner.Calculator
   , weigh
   ) where
 
-import SchedulePlanner.Calculator.Scale
-import SchedulePlanner.Calculator.Solver
+import           SchedulePlanner.Calculator.Scale
+import           SchedulePlanner.Calculator.Solver

@@ -1,3 +1,4 @@
+{-# LANGUAGE UnicodeSyntax #-}
 {-|
 Module      : $Header$
 Description : Basic types used internally by this software
@@ -23,18 +24,18 @@ module SchedulePlanner.Types
 import           Data.Typeable
 
 
-newtype Slot = Slot { unSlot :: Int } deriving (Eq, Show, Ord)
+newtype Slot = Slot { unSlot ∷ Int } deriving (Eq, Show, Ord)
 
-newtype Day  = Day  { unDay :: Int } deriving (Eq, Show, Ord)
+newtype Day  = Day  { unDay ∷ Int } deriving (Eq, Show, Ord)
 
-newtype Cell = Cell { unCell :: (Day, Slot) } deriving (Eq, Show, Ord)
+newtype Cell = Cell { unCell ∷ (Day, Slot) } deriving (Eq, Show, Ord)
 
 
 -- | Base datastructure for representing lessons
-data Lesson s = Lesson { timeslot :: Slot
-                       , day      :: Day
-                       , weight   :: Int
-                       , subject  :: s
+data Lesson s = Lesson { timeslot ∷ Slot
+                       , day      ∷ Day
+                       , weight   ∷ Int
+                       , subject  ∷ s
                        } deriving (Show, Eq, Ord, Typeable)
 
 
@@ -46,12 +47,12 @@ data Target = TSlot Slot
 
 
 -- | Weight increase by 'severity' for all 'Lesson's in target
-data Rule = Rule { target   :: Target
-                 , severity :: Int
+data Rule = Rule { target   ∷ Target
+                 , severity ∷ Int
                  } deriving (Show, Typeable)
 
 
 -- | Dynamic rule with only one condition
-data SimpleDynRule = SimpleDynRule { sDynTarget   :: Target
-                                   , sDynSeverity :: Int
+data SimpleDynRule = SimpleDynRule { sDynTarget   ∷ Target
+                                   , sDynSeverity ∷ Int
                                    } deriving (Show)

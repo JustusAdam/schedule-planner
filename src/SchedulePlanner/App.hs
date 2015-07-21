@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnicodeSyntax     #-}
 {-|
 Module      : $Header$
 Description : Connector from IO to logic
@@ -23,11 +24,14 @@ import           Control.Monad.Writer       (Writer, runWriter, tell, when)
 import           Data.Aeson                 (eitherDecode, encode)
 import           Data.ByteString.Lazy       as LBS (ByteString, toStrict)
 import qualified Data.Map                   as Map (elems, keys)
+import           Data.Monoid.Unicode
 import           Data.String                (fromString)
-import           Data.Text                  as T (Text, append, pack)
+import           Data.Text                  as T (Text, pack)
 import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn, writeFile)
-import           SchedulePlanner.Calculator (MappedSchedule(..), MappedLessons(..), calcFromMap,
+import           Prelude.Unicode
+import           SchedulePlanner.Calculator (MappedLessons (..),
+                                             MappedSchedule (..), calcFromMap,
                                              mapToSubject, weigh)
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
                                              formatSchedule, scheduleToJson,
@@ -35,14 +39,14 @@ import           SchedulePlanner.Serialize  (DataFile (DataFile),
 
 
 -- |Print a string if debug is enabled
-printDebug :: Show a => Bool -> a -> Writer Text ()
-printDebug debugMode = when debugMode . tell . pack . show
+printDebug :: Show a ⇒ Bool → a → Writer Text ()
+printDebug debugMode = when debugMode ∘ tell ∘ pack ∘ show
 
 
 {-|
   Calculation on internal data structures.
 -}
-calculate :: DataFile -> Maybe [MappedSchedule Text]
+calculate :: DataFile → Maybe [MappedSchedule Text]
 calculate (DataFile rules lessons) =
   calcFromMap $ mapToSubject $ weigh rules lessons
 
@@ -50,68 +54,68 @@ calculate (DataFile rules lessons) =
 {-|
   Calculation wrapped into server I/O compatible data structures.
 -}
-serverCalculation :: ByteString -> ByteString
+serverCalculation :: ByteString → ByteString
 serverCalculation =
   either
-    (fromString . ("Error:" ++) . show)
+    (fromString ∘ ("Error:" ⧺) ∘ show)
     (maybe
       "\"No schedule could be calculated\""
-      (encode . map scheduleToJson)
-    . calculate)
-  . eitherDecode
+      (encode ∘ map scheduleToJson)
+    ∘ calculate)
+  ∘ eitherDecode
 
 
 {-|
   Evaluates the transformed json, compiles (useful) error messages, runs the algorithm
   and returns a writer of any output created.
 -}
-reportAndExecute :: Text -> Bool -> DataFile -> Writer Text ()
+reportAndExecute :: Text → Bool → DataFile → Writer Text ()
 reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
   maybe
     (tell "Calculation failed, no valid schedule possible")
 
-    (\calculated ->
+    (\calculated →
 
       case outputFormat of
 
-        "print" -> do
+        "print" → do
 
           tell "\n"
-          _       <- mapM (printDebug debugMode) rules
+          _       ← mapM (printDebug debugMode) rules
           tell "\n"
 
           tell "\n"
-          _       <- mapM (printDebug debugMode) weighted
+          _       ← mapM (printDebug debugMode) weighted
           tell "\n"
 
           tell "Legend:"
-          _       <- mapM (tell . pack . show . (shortSubject &&& id) ) (Map.keys mlRaw)
+          _       ← mapM (tell ∘ pack ∘ show ∘ (shortSubject &&& id) ) (Map.keys mlRaw)
 
 
           tell "\n"
-          _       <- pc calculated
+          _       ← pc calculated
           return ()
 
-        "json" -> do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap (Map.elems . unMapSchedule) calculated
+        "json" → do
+          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap (Map.elems ∘ unMapSchedule) calculated
           return ()
 
-        _ -> tell "invalid output format")
+        _ → tell "invalid output format")
 
     (calcFromMap mappedLessons)
 
   where
     weighted      = weigh rules lessons
     mappedLessons@(MappedLessons mlRaw) = mapToSubject weighted
-    pc            = mapM (tell . append "\n\n" . formatSchedule)
+    pc            = mapM (tell ∘ ("\n\n" ⊕) ∘ formatSchedule)
 
 
 {-|
   perform the calculation and print the result to the command line
 -}
-reportAndPrint :: Text -> Bool -> Maybe String -> ByteString -> IO()
+reportAndPrint :: Text → Bool → Maybe String → ByteString → IO()
 reportAndPrint outputFormat debugMode outFile =
-  maybe TIO.putStrLn TIO.writeFile outFile . either
-    (pack . ("Stopped execution due to a severe problem with the input data:" ++) . show)
-    (snd . runWriter . reportAndExecute outputFormat debugMode)
-     . eitherDecode
+  maybe TIO.putStrLn TIO.writeFile outFile ∘ either
+    (pack ∘ ("Stopped execution due to a severe problem with the input data:" ⧺) ∘ show)
+    (snd ∘ runWriter ∘ reportAndExecute outputFormat debugMode)
+     ∘ eitherDecode

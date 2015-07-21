@@ -41,7 +41,8 @@ executable schedule-planner
       mtl           >= 2.2,
       http-types    >= 0.8,
       composition   >= 1.0,
-      HTTP          >= 4000.2
+      HTTP          >= 4000.2,
+      base-unicode-symbols
   else
     build-depends:
       base          >= 4.7 && <5,
@@ -57,7 +58,8 @@ executable schedule-planner
       http-types    >= 0.8,
       composition   >= 1.0,
       HTTP          >= 4000.2,
-      text-icu      >= 0.7
+      text-icu      >= 0.7,
+      base-unicode-symbols
   main-is: Main.hs
   buildable: True
   other-modules:
