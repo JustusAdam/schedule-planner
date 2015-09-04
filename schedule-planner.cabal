@@ -17,6 +17,7 @@ category: Data, Convenience, Planning
 author: Justus Adam <development@justusadam.com>
 -- data-dir: ""
 extra-source-files: README.md
+tested-with: GHC >= 7.10.1
 
 
 Flag NoScraper
