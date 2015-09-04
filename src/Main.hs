@@ -30,8 +30,8 @@ import           Options                     (Options, defineOption,
                                               defineOptions, optionDefault,
                                               optionDescription,
                                               optionLongFlags, optionShortFlags,
-                                              optionType_bool, optionType_int,
-                                              optionType_list, optionType_maybe,
+                                              optionType_bool, optionType_list,
+                                              optionType_int, optionType_maybe,
                                               optionType_string, runSubcommand,
                                               subcommand)
 import           Prelude                     hiding (readFile)

@@ -149,7 +149,7 @@ toLesson n (Response { rspBody = r })
     i ← n
     maybe
       (return $ Left $ "Cannot find semester " ⧺ show i)
-      (return ∘ return ∘ Semester ∘ (, c))
+      (return ∘ return ∘ Semester ∘ (i,))
       (join $ lookup i tables)
   -- maybe (Left "No parse") (Right . join . map handleSubject) $ lookup tables n
   where
