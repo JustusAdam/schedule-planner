@@ -35,10 +35,16 @@ import           Options                     (Options, defineOption,
                                               optionType_string, runSubcommand,
                                               subcommand)
 import           Prelude                     hiding (readFile)
+#ifndef NOSCRAPER
 import qualified SchedulePlanner             as SP (ScraperOptions (..),
                                                     ServerOptions (..),
                                                     reportAndPrint, scrape,
                                                     server, serverCalculation)
+#else
+import qualified SchedulePlanner             as SP (ServerOptions (..),
+                                                    reportAndPrint,
+                                                    server, serverCalculation)
+#endif
 
 {-|
   If no input filename is provided, use this one.
