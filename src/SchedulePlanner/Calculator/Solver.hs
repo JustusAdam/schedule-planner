@@ -80,9 +80,10 @@ calcFromList = calcFromMap ∘ mapToSubject
 calcFromMap ∷ Ord ɷ
             ⇒ MappedLessons ɷ
             → Maybe [MappedSchedule ɷ]
-calcFromMap (MappedLessons []) = Nothing
-calcFromMap (MappedLessons mappedLessons) =
-  reduceLists subjX (MappedLessons sortedLessons) (MappedSchedule Map.empty) minList
+calcFromMap (MappedLessons mappedLessons)
+  | Map.null mappedLessons  = Nothing
+  | otherwise               =
+    reduceLists subjX (MappedLessons sortedLessons) (MappedSchedule Map.empty) minList
   where
     sortedLessons     = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList) = Map.keys sortedLessons
