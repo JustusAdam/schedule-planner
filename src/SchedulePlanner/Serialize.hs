@@ -110,7 +110,7 @@ instance FromJSON a ⇒ FromJSON (Lesson a) where
   parseJSON _          = mzero
 
 
-instance ToJSON a => ToJSON (Lesson a) where
+instance ToJSON a ⇒ ToJSON (Lesson a) where
   toJSON =
     object . sequenceA
       [ (.=) lessonSlotKey ∘ unSlot ∘ timeslot

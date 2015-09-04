@@ -60,14 +60,14 @@ totalWeight = Map.foldl (+) 0 ∘ Map.map weight ∘ unMapSchedule
 {-|
   Map a List of 'Lesson's to their respective subjects
 -}
-mapToSubject ∷ Ord ɷ => [Lesson ɷ] → MappedLessons ɷ
+mapToSubject ∷ Ord ɷ ⇒ [Lesson ɷ] → MappedLessons ɷ
 mapToSubject = MappedLessons ∘ Map.fromListWith (⧺) ∘ map (subject &&& (:[]))
 
 
 {-|
   Same as 'calcFromMap' but operates on a List of 'Lesson's
 -}
-calcFromList ∷ Ord ɷ => [Lesson ɷ] → Maybe [MappedSchedule ɷ]
+calcFromList ∷ Ord ɷ ⇒ [Lesson ɷ] → Maybe [MappedSchedule ɷ]
 calcFromList = calcFromMap ∘ mapToSubject
 
 
@@ -80,9 +80,9 @@ calcFromList = calcFromMap ∘ mapToSubject
 calcFromMap ∷ Ord ɷ
             ⇒ MappedLessons ɷ
             → Maybe [MappedSchedule ɷ]
-calcFromMap (MappedLessons mappedLessons)
-  | Map.null mappedLessons  = Nothing
-  | otherwise               = reduceLists subjX (MappedLessons sortedLessons) (MappedSchedule Map.empty) minList
+calcFromMap (MappedLessons []) = Nothing
+calcFromMap (MappedLessons mappedLessons) =
+  reduceLists subjX (MappedLessons sortedLessons) (MappedSchedule Map.empty) minList
   where
     sortedLessons     = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
     (subjX : minList) = Map.keys sortedLessons

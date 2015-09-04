@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UnicodeSyntax     #-}
+{-# LANGUAGE TupleSections #-}
 module SchedulePlanner.Scraper.TUDresden (scrapeTuDresden) where
 
 
@@ -146,13 +147,13 @@ toLesson n (Response { rspBody = r })
   | null n    = map (Right . Semester) $ mapMaybe (uncurry clean) tables
   | otherwise = do
     i ← n
-    case join $ lookup i tables of
-      Just c → return $ return $ Semester (i, c)
-      Nothing → return $ Left $ "Cannot find semester " ⧺ show i
+    maybe
+      (return $ Left $ "Cannot find semester " ⧺ show i)
+      (return ∘ return ∘ Semester ∘ (, c))
+      (join $ lookup i tables)
   -- maybe (Left "No parse") (Right . join . map handleSubject) $ lookup tables n
   where
-    clean i (Just c) = return (i, c)
-    clean i Nothing = Nothing
+    clean i = fmap (i,)
 
     associatedTables ∷ [(Int, T.Text)]
     associatedTables = associateTables $ T.pack r
