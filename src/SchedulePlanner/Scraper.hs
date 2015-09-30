@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UnicodeSyntax     #-}
 module SchedulePlanner.Scraper
@@ -7,12 +8,11 @@ module SchedulePlanner.Scraper
   ) where
 
 
-import           Control.Monad.Unicode
-import           Data.Aeson                        (encode)
-import qualified Data.ByteString.Lazy              as B (append, hPutStr,
-                                                         putStr)
-import           Data.Either                       (rights)
-import           Data.String                       (fromString)
+import           Data.Aeson
+import qualified Data.ByteString.Lazy              as B (hPutStr, putStr)
+import           Data.Char                         (toLower)
+import qualified Data.Map                          as Map
+import           Data.Monoid.Unicode               ((⊕))
 import           Prelude.Unicode
 import           SchedulePlanner.Scraper.Base      (Scraper)
 import           SchedulePlanner.Scraper.TUDresden (scrapeTuDresden)
@@ -26,28 +26,26 @@ universities =
   [ ("tudresden", scrapeTuDresden) ]
 
 
-toEither ∷ a → Maybe b → Either a b
-toEither message = maybe (Left message) return
-
-
 data ScraperOptions = ScraperOptions { semesters  ∷ [Int]
                                      , outputFile ∷ Maybe FilePath
                                      } deriving (Show)
 
 
 scrape ∷ ScraperOptions → String → IO ()
-scrape (ScraperOptions { semesters = semesters, outputFile = outputFile }) scraperName =
+scrape (ScraperOptions { semesters, outputFile }) scraperName =
   handleScraperInput
   where
-    scrapeAction scraper =
-      putStrLn ("Trying to scrape semester " ⧺ show semesters ⧺ " for " ⧺ scraperName) ≫
-      serialize <$> scraper semesters ≫= doIO
+    scraperName' = fmap toLower scraperName
+    scrapeAction scraper = do
+      putStrLn ("Trying to scrape semester " ⊕ show semesters ⊕ " for " ⊕ scraperName)
+      data' ← serialize <$> scraper semesters
+      doIO data'
     handleScraperInput =
       maybe
         (putStrLn "This university is not supported (yet).")
         scrapeAction
-        (lookup scraperName universities)
-    serialize     = either fromString (encode ∘ rights)
-    writeConsole  = B.putStr ∘ (`B.append` "\n")
-    writeFile f   = withFile f WriteMode ∘ flip B.hPutStr
-    doIO          = maybe writeConsole writeFile outputFile
+        (lookup scraperName' universities)
+    serialize     = encode ∘ fmap (object ∘ sequence [("semester" .=) . fst, ("lessons" .=) . snd]) ∘ Map.toList
+    writeConsole  = B.putStr ∘ (⊕ "\n")
+    write f       = withFile f WriteMode ∘ flip B.hPutStr
+    doIO          = maybe writeConsole write outputFile

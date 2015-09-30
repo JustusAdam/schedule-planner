@@ -42,50 +42,6 @@ import           SchedulePlanner.Types
 import           Text.Printf                  (printf)
 
 
--- | Key for the rules data in the json input
-ruleKey       ∷ Text
-ruleKey       = "rules"
--- | Key for the lesson data in the json input
-lessonKey     ∷ Text
-lessonKey     = "lessons"
--- | Key for the scope property in Rule objects in the json input
-scopeKey      ∷ Text
-scopeKey      = "scope"
--- | Key for the severity property in Rule objects in the json input
-severityKey   ∷ Text
-severityKey   = "severity"
--- | Key for the day property in Rule objects in the json input
-ruleDayKey    ∷ Text
-ruleDayKey    = "day"
--- | Key for the slot property in Rule objects in the json input
-ruleSlotKey   ∷ Text
-ruleSlotKey   = "slot"
--- | Key for the subject property in Lesson objects in the json input
-subjectKey    ∷ Text
-subjectKey    = "subject"
--- | Key for the day property in Lesson objects in the json input
-lessonDayKey  ∷ Text
-lessonDayKey  = "day"
--- | Key for the slot property in Rule objects in the json input
-lessonSlotKey ∷ Text
-lessonSlotKey = "slot"
--- | Value used in the "scope" attribute in json to indicate a slot being the target
-scopeSlotVal  ∷ Text
-scopeSlotVal  = "slot"
--- | Value used in the "scope" attribute in json to indicate a day being the target
-scopeDayVal   ∷ Text
-scopeDayVal   = "day"
--- | Value used in the "scope" attribute in json to indicate a cell being the target
-scopeCellVal  ∷ Text
-scopeCellVal  = "cell"
-
-scheduleWeightKey ∷ Text
-scheduleWeightKey = "weight"
-
-semesterNumberKey ∷ Text
-semesterNumberKey = "semester"
-
-
 -- | How many days a week has
 daysPerWeek   ∷ Int
 daysPerWeek   = 7
@@ -103,86 +59,81 @@ data DataFile = DataFile [Rule] [Lesson Text] deriving (Show)
 
 instance FromJSON a ⇒ FromJSON (Lesson a) where
   parseJSON (Object o) = Lesson
-    <$> (Slot <$> o .: lessonSlotKey)
-    ⊛ (Day  <$> o .: lessonDayKey)
-    ⊛ pure 0
-    ⊛ o .: subjectKey
+    <$> (Slot <$> o .: "slot")
+    ⊛ (Day  <$> o .: "day")
+    ⊛ return 0
+    ⊛ o .:  "subject"
   parseJSON _          = mzero
 
 
 instance ToJSON a ⇒ ToJSON (Lesson a) where
   toJSON =
-    object . sequenceA
-      [ (.=) lessonSlotKey ∘ unSlot ∘ timeslot
-      , (.=) lessonDayKey  ∘ unDay ∘ day
-      , (.=) subjectKey    ∘ subject
+    object . sequence
+      [ (.=) "slot"    ∘ unSlot ∘ timeslot
+      , (.=) "day"     ∘ unDay ∘ day
+      , (.=) "subject" ∘ subject
       ]
 
 
 instance ToJSON Rule where
   toJSON =
     object ∘ ((:)
-      <$> ((.=) severityKey ∘ severity)
-      ⊛ uncurry (:) ∘ Arrow.first (scopeKey .=) ∘ getTarget ∘ target)
+      <$> ((.=) "severity" ∘ severity)
+      ⊛ uncurry (:) ∘ Arrow.first ("scope" .=) ∘ getTarget ∘ target)
     where
       getTarget ∷ Target → (Text, [(Text, Value)])
-      getTarget (TDay d)    = (scopeDayVal, [ruleDayKey  .= unDay d])
+      getTarget (TDay d)    = ("day", ["day"  .= unDay d])
       getTarget (TCell c)   =
         second
-          ( sequenceA
-            [ (ruleDayKey  .=) ∘ unDay ∘ fst
-            , (ruleSlotKey .=) ∘ unSlot ∘ snd
+          ( sequence
+            [ ("day"  .=) ∘ unDay ∘ fst
+            , ("slot" .=) ∘ unSlot ∘ snd
             ])
-          (scopeCellVal, unCell c)
-      getTarget (TSlot s)   = (scopeSlotVal, [ruleSlotKey .= unSlot s])
+          ("cell", unCell c)
+      getTarget (TSlot s)   = ("slot", ["slot" .= unSlot s])
 
 
 instance FromJSON Rule where
   parseJSON (Object o) = Rule
-    <$> ((o .: scopeKey) ≫= fromScope o)
-    ⊛ o .: severityKey
+    <$> ((o .: "scope") ≫= fromScope o)
+    ⊛ o .: "severity"
     where
       fromScope ∷ Object → Text → Parser Target
-      fromScope obj scope
-        | scope == scopeDayVal  = (TDay  ∘ Day)  <$> obj .: ruleDayKey
-        | scope == scopeSlotVal = (TSlot ∘ Slot) <$> obj .: ruleSlotKey
-        | scope == scopeCellVal = ((TCell ∘ Cell) Comp..: curry (Day ⁂ Slot))
-                                      <$> obj .: ruleDayKey
-                                      ⊛ obj .: ruleSlotKey
-        | otherwise = error $ "unknown scope " ⧺ unpack scope  -- I am so sorry
+      fromScope obj "day" = (TDay  ∘ Day)  <$> obj .: "day"
+      fromScope obj "slot" = (TSlot ∘ Slot) <$> obj .: "slot"
+      fromScope obj "cell" = ((TCell ∘ Cell) Comp..: curry (Day ⁂ Slot))
+                                      <$> obj .: "day"
+                                      ⊛ obj .: "slot"
+      fromScope _ scope = error $ "unknown scope " ⧺ unpack scope  -- I am so sorry
   parseJSON _         = mzero
 
 
 instance FromJSON DataFile where
   parseJSON (Object o) = DataFile
-    <$> o .: ruleKey
-    ⊛ o .: lessonKey
+    <$> o .: "rules"
+    ⊛ o .: "lessons"
   parseJSON _          = mzero
 
 
 instance ToJSON DataFile where
   toJSON (DataFile r l) =
     object
-      [ lessonKey .= l
-      , ruleKey   .= r
+      [ "lessons" .= l
+      , "rules"   .= r
       ]
 
 
 instance ToJSON Semester where
-  toJSON (Semester (number, lessons)) =
-    object
-      [ lessonKey         .= lessons
-      , semesterNumberKey .= number
-      ]
+  toJSON = toJSON ∘ unSemester
 
 
 {-|
   Convert a single 'MappedSchedule' to a JSON 'Value'
 -}
 scheduleToJson ∷ ToJSON a ⇒ MappedSchedule a → Value
-scheduleToJson = object ∘ sequenceA
-  [ (.=) lessonKey ∘ Map.elems ∘ unMapSchedule
-  , (.=) scheduleWeightKey ∘ totalWeight
+scheduleToJson = object ∘ sequence
+  [ (.=) "lessons" ∘ Map.elems ∘ unMapSchedule
+  , (.=) "weight" ∘ totalWeight
   ]
 
 

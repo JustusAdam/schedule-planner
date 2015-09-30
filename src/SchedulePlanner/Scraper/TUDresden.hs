@@ -1,23 +1,25 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections     #-}
 {-# LANGUAGE UnicodeSyntax     #-}
-{-# LANGUAGE TupleSections #-}
 module SchedulePlanner.Scraper.TUDresden (scrapeTuDresden) where
 
 
-import           Control.Arrow                (first, second, (&&&))
+import           Control.Applicative          ((<|>))
+import           Control.Applicative.Unicode
+import           Control.Arrow                (second, (&&&))
 import           Control.Arrow.Unicode
-import           Control.Monad                (join, mplus, (>=>))
+import           Control.Monad                (join, (>=>))
 import           Control.Monad.Unicode
 import           Data.Bool                    (bool)
-import qualified Data.Map                     as Map (Map, fromList, lookup)
-import           Data.Maybe                   (catMaybes, fromMaybe, isJust,
-                                               mapMaybe)
-import           Data.Monoid.Unicode
-import qualified Data.Text                    as T (Text, append, filter, pack,
-                                                    splitOn, unpack)
+import qualified Data.Map                     as Map (Map, empty, fromList,
+                                                      fromListWith, lookup)
+import           Data.Maybe                   (catMaybes, fromMaybe, mapMaybe)
+import           Data.Monoid.Unicode          ((⊕))
+import qualified Data.Text                    as T (Text, filter, pack, splitOn,
+                                                    unpack)
 import           Data.Text.ICU                (MatchOption (DotAll), Regex,
                                                find, findAll, group, regex)
-import           Debug.Trace
 import           Network.HTTP                 (Request_String,
                                                Response (Response), getRequest,
                                                rspBody, simpleHTTP)
@@ -61,9 +63,9 @@ retry ∷ Int → IO (Either a b) → IO (Either a b)
 retry i a = a ≫= doIt i
   where
     doIt _ v@(Right _) = return v
-    doIt i v@(Left _)
-      | i <= 0    = return v
-      | otherwise = a ≫= doIt (i-1)
+    doIt i' v@(Left _)
+      | i' <= 0    = return v
+      | otherwise = a ≫= doIt (i'-1)
 
 
 tuDresdenRequestUrl ∷ Request_String
@@ -78,10 +80,6 @@ getPage ∷ IO (Result (Response String))
 getPage = simpleHTTP tuDresdenRequestUrl
 
 
-ts a = traceShow a a
-
-t a = trace a a
-
 stripWhite ∷ T.Text → T.Text
 stripWhite = T.filter (≢ ' ')
 
@@ -93,7 +91,7 @@ findRows = mapMaybe (group 1) ∘ findAll trRegex
 handleSubject ∷ [T.Text] → [Lesson T.Text]
 handleSubject (a:_:_:_:_:_:b:c:d:_) =
   fromMaybe [] $ do
-    name ← find aRegex a `mplus` find brRegex a ≫= group 1
+    name ← find aRegex a <|> find brRegex a ≫= group 1
     return $ fst $ foldr (flip $ uncurry (handleLesson name)) ([], 1) $ zip3 (splitBr b) (splitBr c) (splitBr d)
   where
     splitBr = join ∘ map (T.splitOn "<br/>") ∘ T.splitOn "<br />"
@@ -125,8 +123,7 @@ handleLesson name other lectureNumber (ckind, cday, cslot) =
 
 
 flatten2 ∷ Maybe a → Maybe b → Maybe (a, b)
-flatten2 (Just a) (Just b) = return (a,b)
-flatten2 _        _        = Nothing
+flatten2 a b = (,) <$> a ⊛ b
 
 
 associateTables ∷ T.Text → [(Int, T.Text)]
@@ -142,24 +139,23 @@ associateTables source =
     rawTables        = findAll grabTableRegex source
 
 
-toLesson ∷ [Int] → Response String → [Either String Semester]
-toLesson n (Response { rspBody = r })
-  | null n    = map (Right . Semester) $ mapMaybe (uncurry clean) tables
-  | otherwise = do
-    i ← n
-    maybe
-      (return $ Left $ "Cannot find semester " ⧺ show i)
-      (return ∘ return ∘ Semester ∘ (i,))
-      (join $ lookup i tables)
-  -- maybe (Left "No parse") (Right . join . map handleSubject) $ lookup tables n
+toLesson ∷ [Int] → Response String → Map.Map Int (Either String Semester)
+toLesson n (Response { rspBody = r }) =
+  Map.fromList $ fmap (second (fmap Semester)) selected
   where
-    clean i = fmap (i,)
+    selected
+      | null n    =
+        [(i, maybe (Left $ "Cannot find semester " ⊕ show i) return $ lookup i tables) | i <- n]
+      | otherwise = fmap (second return) tables
 
     associatedTables ∷ [(Int, T.Text)]
     associatedTables = associateTables $ T.pack r
 
-    tables           ∷ [(Int, Maybe [Lesson T.Text])]
-    tables           = fmap (second (fmap (join ∘ map handleSubject ∘ lessons) ∘ getRawLessons)) associatedTables
+    tables           ∷ [(Int, [Lesson T.Text])]
+    tables           = catMaybes $ fmap (uncurry handleTable) associatedTables
+
+    handleTable index content =
+      (index,) ∘ (join ∘ map handleSubject ∘ lessons) <$> getRawLessons content
 
     getRawLessons    ∷ T.Text → Maybe [T.Text]
     getRawLessons    = fmap snd ∘ uncons ∘ findRows
@@ -167,5 +163,6 @@ toLesson n (Response { rspBody = r })
     lessons          = fmap (mapMaybe (group 1) ∘ findAll tdRegex)
 
 
-scrapeTuDresden ∷ [Int] → IO (Either String [Either String Semester])
-scrapeTuDresden n = either (Left ∘ show) (Right ∘ toLesson n) <$> retry stdRetries getPage
+scrapeTuDresden ∷ Scraper
+scrapeTuDresden n = either (const errormap) (toLesson n) <$> retry stdRetries getPage
+  where errormap = Map.fromList $ zip n (repeat (Left "ConnectionError"))

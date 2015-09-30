@@ -4,8 +4,9 @@ module SchedulePlanner.Scraper.Base where
 
 import           Data.Text
 import           SchedulePlanner.Types
+import Data.Map
 
 
-newtype Semester = Semester { unSemester ∷ (Int, [Lesson Text]) }
+newtype Semester = Semester { unSemester ∷ [Lesson Text] }
 
-type Scraper = ([Int] → IO (Either String [Either String Semester]))
+type Scraper = ([Int] → IO (Map Int (Either String Semester)))

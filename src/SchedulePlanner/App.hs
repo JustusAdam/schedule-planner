@@ -20,13 +20,15 @@ module SchedulePlanner.App
 
 
 import           Control.Arrow              ((&&&))
+import           Control.Monad              (void)
 import           Control.Monad.Writer       (Writer, runWriter, tell, when)
 import           Data.Aeson                 (eitherDecode, encode)
 import           Data.ByteString.Lazy       as LBS (ByteString, toStrict)
 import qualified Data.Map                   as Map (elems, keys)
+import           Data.Maybe                 (isNothing)
 import           Data.Monoid.Unicode
 import           Data.String                (fromString)
-import           Data.Text                  as T (Text, pack)
+import           Data.Text                  as T (Text, pack, toLower)
 import qualified Data.Text.Encoding         (decodeUtf8)
 import           Data.Text.IO               as TIO (putStrLn, writeFile)
 import           Prelude.Unicode
@@ -36,7 +38,6 @@ import           SchedulePlanner.Calculator (MappedLessons (..),
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
                                              formatSchedule, scheduleToJson,
                                              shortSubject)
-
 
 -- |Print a string if debug is enabled
 printDebug :: Show a ⇒ Bool → a → Writer Text ()
@@ -70,44 +71,35 @@ serverCalculation =
   and returns a writer of any output created.
 -}
 reportAndExecute :: Text → Bool → DataFile → Writer Text ()
-reportAndExecute outputFormat debugMode (DataFile rules lessons)  =
-  maybe
-    (tell "Calculation failed, no valid schedule possible")
+reportAndExecute outputFormat debugMode (DataFile rules lessons)
+  | isNothing calculated = tell "Calculation failed, no valid schedule possible"
+  | outputFormat' ≡ "print" = do
+    tell "\n"
+    _       ← mapM (printDebug debugMode) rules
+    tell "\n"
 
-    (\calculated →
+    tell "\n"
+    _       ← mapM (printDebug debugMode) weighted
+    tell "\n"
 
-      case outputFormat of
-
-        "print" → do
-
-          tell "\n"
-          _       ← mapM (printDebug debugMode) rules
-          tell "\n"
-
-          tell "\n"
-          _       ← mapM (printDebug debugMode) weighted
-          tell "\n"
-
-          tell "Legend:"
-          _       ← mapM (tell ∘ pack ∘ show ∘ (shortSubject &&& id) ) (Map.keys mlRaw)
+    tell "Legend:"
+    _       ← mapM (tell ∘ pack ∘ show ∘ (shortSubject &&& id) ) (Map.keys mlRaw)
 
 
-          tell "\n"
-          _       ← pc calculated
-          return ()
+    tell "\n"
+    void $ maybe (error "Unexpected missing result") pc calculated
+  | outputFormat' ≡ "json" =
+    void $ maybe (error "unexpected missing result") (tell ∘ Data.Text.Encoding.decodeUtf8 ∘ toStrict ∘ encode ∘ concatMap (Map.elems ∘ unMapSchedule)) calculated
 
-        "json" → do
-          tell $ Data.Text.Encoding.decodeUtf8 $ toStrict $ encode $ concatMap (Map.elems ∘ unMapSchedule) calculated
-          return ()
 
-        _ → tell "invalid output format")
-
-    (calcFromMap mappedLessons)
+  | otherwise = tell "invalid output format"
 
   where
+    outputFormat' = toLower outputFormat
     weighted      = weigh rules lessons
     mappedLessons@(MappedLessons mlRaw) = mapToSubject weighted
     pc            = mapM (tell ∘ ("\n\n" ⊕) ∘ formatSchedule)
+    calculated    = calcFromMap mappedLessons
 
 
 {-|

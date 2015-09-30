@@ -30,8 +30,8 @@ import           Options                     (Options, defineOption,
                                               defineOptions, optionDefault,
                                               optionDescription,
                                               optionLongFlags, optionShortFlags,
-                                              optionType_bool, optionType_list,
-                                              optionType_int, optionType_maybe,
+                                              optionType_bool, optionType_int,
+                                              optionType_list, optionType_maybe,
                                               optionType_string, runSubcommand,
                                               subcommand)
 import           Prelude                     hiding (readFile)
@@ -42,9 +42,10 @@ import qualified SchedulePlanner             as SP (ScraperOptions (..),
                                                     server, serverCalculation)
 #else
 import qualified SchedulePlanner             as SP (ServerOptions (..),
-                                                    reportAndPrint,
-                                                    server, serverCalculation)
+                                                    reportAndPrint, server,
+                                                    serverCalculation)
 #endif
+import           SchedulePlanner.Util
 
 {-|
   If no input filename is provided, use this one.
@@ -192,5 +193,5 @@ serverMain _ so _ = SP.server so SP.serverCalculation
 #ifndef NOSCRAPER
 scraperMain ∷ CommonOptions → SP.ScraperOptions → [String] → IO ()
 scraperMain _ so [u] = SP.scrape so u
-scraperMain _ _ _ = putStrLn "You need to provide a university which to scrape"
+scraperMain _ _ _ = logLine "You need to provide a university which to scrape"
 #endif

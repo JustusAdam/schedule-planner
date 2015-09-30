@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP               #-}
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UnicodeSyntax     #-}
 {-|
@@ -24,8 +25,7 @@ import           Network.Wai              (Application, lazyRequestBody,
                                            responseLBS)
 import           Network.Wai.Handler.Warp (run)
 import           Prelude.Unicode
-import           System.IO                (IOMode (AppendMode), hPutStrLn,
-                                           withFile)
+import           SchedulePlanner.Util
 
 
 defaultHeaders ∷ [Header]
@@ -45,29 +45,20 @@ data ServerOptions = ServerOptions
   }
 
 
-writeToLog ∷ FilePath → String → IO ()
-writeToLog logfile = withFile logfile AppendMode ∘ flip hPutStrLn
-
-
-logOrPrint ∷ String → Maybe FilePath → IO ()
-logOrPrint message = maybe (putStrLn message) (`writeToLog` message)
-
-
 {-|
   The 'Application' used for the server instance.
 -}
 app ∷ ServerOptions → (ByteString → ByteString) → Application
-app (ServerOptions { logFile = logfile }) app' request respond
+app _ app' request respond
   | rMethod == methodPost =
-    logPureReq ("New POST request from " ⧺ show (remoteHost request)) ≫
+    logLine ("New POST request from " ⧺ show (remoteHost request)) ≫
     lazyRequestBody request ≫=
       respond ∘ responseLBS ok200 headers ∘ app'
   | rMethod == methodOptions = respond $ responseLBS ok200 headers "Bring it!"
   | otherwise =
-    logPureReq ("Unhandleable request: " ⧺ show request) ≫
+    logLine ("Unhandleable request: " ⧺ show request) ≫
     respond (responseLBS imATeaPot418 [] "What are you doing to an innocent teapot?")
   where
-    logPureReq message = logOrPrint message logfile
     rMethod = requestMethod request
     headers = defaultHeaders
 
@@ -76,9 +67,9 @@ app (ServerOptions { logFile = logfile }) app' request respond
   Run the server.
 -}
 server ∷ ServerOptions → (ByteString → ByteString) → IO ()
-server opts@(ServerOptions { port = port, logFile = logfile }) =
+server opts@(ServerOptions { port, logFile }) =
   (≫) serverInit ∘ run port ∘ app opts
   where
     serverInit = do
-      putStrLn $ "Server starting on port " ⧺ show port
-      putStrLn $ "Logging: " ⧺ maybe "disabled" ((⧺) "enbled, logging to " ∘ show) logfile
+      logLine $ "Server starting on port " ⧺ show port
+      logLine $ "Logging: " ⧺ maybe "disabled" ((⧺) "enbled, logging to " ∘ show) logFile
