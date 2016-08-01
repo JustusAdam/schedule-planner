@@ -51,7 +51,7 @@ library
     SchedulePlanner.Calculator.Scale
     SchedulePlanner.Calculator.Solver
     -- SchedulePlanner.Scraper
-    -- SchedulePlanner.Scraper.Base
+    SchedulePlanner.Scraper.Base
     -- SchedulePlanner.Scraper.TUDresden
     SchedulePlanner.Util
   default-language: Haskell2010
