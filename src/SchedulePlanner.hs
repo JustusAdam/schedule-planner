@@ -15,15 +15,11 @@ module SchedulePlanner
   , serverCalculation
   , server
   , ServerOptions(..)
-#ifndef NOSCRAPER
-  , scrape
-  , ScraperOptions(..)
-#endif
+  -- , scrape
+  -- , ScraperOptions(..)
   ) where
 
 
 import           SchedulePlanner.App     (reportAndPrint, serverCalculation)
 import           SchedulePlanner.Server  (ServerOptions (..), server)
-#ifndef NOSCRAPER
-import           SchedulePlanner.Scraper (ScraperOptions (..), scrape)
-#endif
+-- import           SchedulePlanner.Scraper (ScraperOptions (..), scrape)

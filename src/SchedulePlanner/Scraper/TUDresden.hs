@@ -17,9 +17,7 @@ import qualified Data.Map                     as Map (Map, empty, fromList,
 import           Data.Maybe                   (catMaybes, fromMaybe, mapMaybe)
 import           Data.Monoid.Unicode          ((⊕))
 import qualified Data.Text                    as T (Text, filter, pack, splitOn,
-                                                    unpack)
-import           Data.Text.ICU                (MatchOption (DotAll), Regex,
-                                               find, findAll, group, regex)
+                                                    unpack, strip, isSuffixOf)
 import           Network.HTTP                 (Request_String,
                                                Response (Response), getRequest,
                                                rspBody, simpleHTTP)
@@ -28,18 +26,31 @@ import           Prelude.Unicode
 import           SchedulePlanner.Scraper.Base
 import           SchedulePlanner.Types        (Day (..), Lesson (..), Slot (..))
 import           Text.Read                    (readMaybe)
+import           Text.XML.Cursor             hiding (bool)
+import Text.XML (parseText_, Document)
+import Control.Category
+import Prelude hiding (id, (.))
+import Data.Function ((&))
 
 
-grabTableRegex ∷ Regex
-grabTableRegex = regex [DotAll] "<h1>(\\d). Semester</h1>.*?<table>(.*?)</table>"
-trRegex        ∷ Regex
-trRegex        = regex [DotAll] "<tr>(.*?)</tr>"
-tdRegex        ∷ Regex
-tdRegex        = regex [DotAll] "<td>(.*?)</td>"
-aRegex         ∷ Regex
-aRegex         = regex [DotAll] "<a .*?\">(.*?)</a>"
-brRegex        ∷ Regex
-brRegex        = regex [DotAll] " (.*?)<br ?/>"
+-- grabTableRegex ∷ Regex
+-- grabTableRegex = regex [DotAll] "<h1>(\\d). Semester</h1>.*?<table>(.*?)</table>"
+-- trRegex        ∷ Regex
+-- trRegex        = regex [DotAll] "<tr>(.*?)</tr>"
+-- tdRegex        ∷ Regex
+-- tdRegex        = regex [DotAll] "<td>(.*?)</td>"
+-- aRegex         ∷ Regex
+-- aRegex         = regex [DotAll] "<a .*?\">(.*?)</a>"
+-- brRegex        ∷ Regex
+-- brRegex        = regex [DotAll] " (.*?)<br ?/>"
+
+
+onlyIf :: a -> Bool -> Maybe a
+onlyIf _ False = Nothing
+onlyIf a _ = return a
+
+
+bind = (>>=)
 
 
 days ∷ Map.Map T.Text Int
@@ -84,17 +95,13 @@ stripWhite ∷ T.Text → T.Text
 stripWhite = T.filter (≢ ' ')
 
 
-findRows ∷ T.Text → [T.Text]
-findRows = mapMaybe (group 1) ∘ findAll trRegex
-
-
-handleSubject ∷ [T.Text] → [Lesson T.Text]
+handleSubject ∷ [Cursor] → [Lesson T.Text]
 handleSubject (a:_:_:_:_:_:b:c:d:_) =
-  fromMaybe [] $ do
-    name ← find aRegex a <|> find brRegex a ≫= group 1
-    return $ fst $ foldr (flip $ uncurry (handleLesson name)) ([], 1) $ zip3 (splitBr b) (splitBr c) (splitBr d)
+  fst $ foldr (flip $ uncurry (handleLesson name)) ([], 1) $ zip3 (splitBr b) (splitBr c) (splitBr d)
   where
-    splitBr = join ∘ map (T.splitOn "<br/>") ∘ T.splitOn "<br />"
+    name = (((a $/ element "a") >>= content) <|>
+      (content a & head & T.splitOn "<br />")) & head :: T.Text
+    splitBr = content >>> head >>> T.splitOn "<br />" >=> T.splitOn "<br/>"
 
 handleSubject _ = []
 
@@ -126,21 +133,33 @@ flatten2 ∷ Maybe a → Maybe b → Maybe (a, b)
 flatten2 a b = (,) <$> a ⊛ b
 
 
-associateTables ∷ T.Text → [(Int, T.Text)]
+associateTables ∷ Document → [(Int, Cursor)]
 associateTables source =
-
-  cleanMaybes $ findAccociations <$> rawTables
+  zip numbers tables
 
   where
+    tables :: [Cursor]
+    tables = flip map viableHeadings $
+      ($| followingSibling
+        >=> element "table")
+      >>> head
 
-    cleanMaybes      = catMaybes ∘ fmap (uncurry flatten2)
-    findAccociations = (group 1 >=> convertNumber) &&& group 2
-    convertNumber    = readMaybe ∘ T.unpack
-    rawTables        = findAll grabTableRegex source
+    numbers :: [Int]
+    numbers = map (content >>> head >>> T.splitOn "." >>> head >>> T.strip >>> T.unpack >>> read) viableHeadings
+
+    viableHeadings =
+      fromDocument source
+      $// element "h1"
+      >=> check (
+        content >>> uncons >=>
+          (fst >>> \heading ->
+            heading `onlyIf` (". Semester" `T.isSuffixOf` heading))
+      )
 
 
-toLesson ∷ [Int] → Response String → Map.Map Int (Either String Semester)
-toLesson n (Response { rspBody = r }) =
+
+toLesson ∷ [Int] → Document → Map.Map Int (Either String Semester)
+toLesson n doc =
   Map.fromList $ fmap (second (fmap Semester)) selected
   where
     selected
@@ -148,21 +167,21 @@ toLesson n (Response { rspBody = r }) =
         [(i, maybe (Left $ "Cannot find semester " ⊕ show i) return $ lookup i tables) | i <- n]
       | otherwise = fmap (second return) tables
 
-    associatedTables ∷ [(Int, T.Text)]
-    associatedTables = associateTables $ T.pack r
+    associatedTables ∷ [(Int, Cursor)]
+    associatedTables = associateTables doc
 
     tables           ∷ [(Int, [Lesson T.Text])]
-    tables           = catMaybes $ fmap (uncurry handleTable) associatedTables
+    tables           = map (uncurry handleTable) associatedTables
 
     handleTable index content =
-      (index,) ∘ (join ∘ map handleSubject ∘ lessons) <$> getRawLessons content
+      (index,) ∘ (lessons >>> handleSubject) <$> getRawLessons content
 
-    getRawLessons    ∷ T.Text → Maybe [T.Text]
-    getRawLessons    = fmap snd ∘ uncons ∘ findRows
+    getRawLessons    ∷ Cursor → [Cursor]
+    getRawLessons    = drop 1 ∘ ($/ element "tr")
 
-    lessons          = fmap (mapMaybe (group 1) ∘ findAll tdRegex)
+    lessons          = ($/ element "td")
 
 
 scrapeTuDresden ∷ Scraper
-scrapeTuDresden n = either (const errormap) (toLesson n) <$> retry stdRetries getPage
+scrapeTuDresden n = either (const errormap) (toLesson n . parseText_ .  rspBody) <$> retry stdRetries getPage
   where errormap = Map.fromList $ zip n (repeat (Left "ConnectionError"))

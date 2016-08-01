@@ -20,50 +20,28 @@ extra-source-files: README.md
 tested-with: GHC >= 7.10.1
 
 
-Flag NoScraper
-  Default: False
-
-Flag Static
+Flag noscraper
   Default: False
 
 
-executable schedule-planner
-  if flag(NoScraper)
-    build-depends:
-      base          >= 4.8 && <5,
-      containers    >= 0.5,
-      aeson         >= 0.8,
-      options       >= 1.2,
-      transformers  >= 0.4,
-      bytestring    >= 0.10,
-      text          >= 1.2,
-      warp          >= 3.0,
-      wai           >= 3.0,
-      mtl           >= 2.2,
-      http-types    >= 0.8,
-      composition   >= 1.0,
-      HTTP          >= 4000.2,
-      base-unicode-symbols
-  else
-    build-depends:
-      base          >= 4.7 && <5,
-      containers    >= 0.5,
-      aeson         >= 0.8,
-      options       >= 1.2,
-      transformers  >= 0.4,
-      bytestring    >= 0.10,
-      text          >= 1.2,
-      warp          >= 3.0,
-      wai           >= 3.0,
-      mtl           >= 2.2,
-      http-types    >= 0.8,
-      composition   >= 1.0,
-      HTTP          >= 4000.2,
-      text-icu      >= 0.7,
-      base-unicode-symbols
-  main-is: Main.hs
-  buildable: True
-  other-modules:
+library
+  build-depends:
+      base          >= 4.8 && <5
+    , containers
+    , aeson
+    , options
+    , transformers
+    , bytestring
+    , text
+    , warp
+    , wai
+    , mtl
+    , http-types
+    , composition
+    , HTTP
+    , base-unicode-symbols
+    , xml-conduit
+  exposed-modules:
     SchedulePlanner
     SchedulePlanner.App
     SchedulePlanner.Calculator
@@ -72,24 +50,28 @@ executable schedule-planner
     SchedulePlanner.Types
     SchedulePlanner.Calculator.Scale
     SchedulePlanner.Calculator.Solver
-    SchedulePlanner.Scraper
-    SchedulePlanner.Scraper.Base
-    SchedulePlanner.Scraper.TUDresden
+    -- SchedulePlanner.Scraper
+    -- SchedulePlanner.Scraper.Base
+    -- SchedulePlanner.Scraper.TUDresden
     SchedulePlanner.Util
   default-language: Haskell2010
   hs-source-dirs: src
-  if flag(NoScraper)
-    cpp-options: "-DNOSCRAPER"
-  if !flag(Static)
-    ghc-options:
-      -Wall
-  else
-    ghc-options:
-      -Wall
-      -static
-      -optl-pthread
-      -optl-static
 
+
+
+executable schedule-planner
+  build-depends:
+      base
+    , schedule-planner
+    , base-unicode-symbols
+    , bytestring
+    , options
+    , text
+  ghc-options:
+    -Wall
+  main-is: Main.hs
+  hs-source-dirs: app
+  default-language: Haskell2010
 
 source-repository head
   type:     git

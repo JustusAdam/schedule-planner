@@ -19,3 +19,4 @@ __pycache__/
 cabal.sandbox.config
 .cabal-sandbox/
 *.log
+.stack-work/

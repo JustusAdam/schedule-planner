@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP               #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UnicodeSyntax     #-}
 {-|
@@ -35,16 +34,13 @@ import           Options                     (Options, defineOption,
                                               optionType_string, runSubcommand,
                                               subcommand)
 import           Prelude                     hiding (readFile)
-#ifndef NOSCRAPER
-import qualified SchedulePlanner             as SP (ScraperOptions (..),
-                                                    ServerOptions (..),
-                                                    reportAndPrint, scrape,
-                                                    server, serverCalculation)
-#else
+-- import qualified SchedulePlanner             as SP (ScraperOptions (..),
+--                                                     ServerOptions (..),
+--                                                     reportAndPrint, scrape,
+--                                                     server, serverCalculation)
 import qualified SchedulePlanner             as SP (ServerOptions (..),
                                                     reportAndPrint, server,
                                                     serverCalculation)
-#endif
 import           SchedulePlanner.Util
 
 {-|
@@ -136,22 +132,20 @@ instance Options SP.ServerOptions where
                    })
 
 
-#ifndef NOSCRAPER
-instance Options SP.ScraperOptions where
-  defineOptions = SP.ScraperOptions
-    <$> defineOption
-          (optionType_list ',' optionType_int)
-          (\o → o { optionShortFlags = "s"
-                   , optionLongFlags = ["semester"]
-                   , optionDescription = "which semesters to scrape for"
-                   })
-    ⊛ defineOption
-          (optionType_maybe optionType_string)
-          (\o → o { optionLongFlags = ["output-file"]
-                   , optionShortFlags = "o"
-                   , optionDescription = "Save the output to this file"
-                   })
-#endif
+-- instance Options SP.ScraperOptions where
+--   defineOptions = SP.ScraperOptions
+--     <$> defineOption
+--           (optionType_list ',' optionType_int)
+--           (\o → o { optionShortFlags = "s"
+--                    , optionLongFlags = ["semester"]
+--                    , optionDescription = "which semesters to scrape for"
+--                    })
+--     ⊛ defineOption
+--           (optionType_maybe optionType_string)
+--           (\o → o { optionLongFlags = ["output-file"]
+--                    , optionShortFlags = "o"
+--                    , optionDescription = "Save the output to this file"
+--                    })
 
 {-|
   main function. Handles reading command line arguments, the json input
@@ -162,9 +156,7 @@ main =
   runSubcommand
     [ subcommand "calc" directCall
     , subcommand "serve" serverMain
-#ifndef NOSCRAPER
-    , subcommand "scrape" scraperMain
-#endif
+    -- , subcommand "scrape" scraperMain
     ]
 
 {-|
@@ -190,8 +182,6 @@ serverMain ∷ CommonOptions → SP.ServerOptions → [String] → IO ()
 serverMain _ so _ = SP.server so SP.serverCalculation
 
 
-#ifndef NOSCRAPER
-scraperMain ∷ CommonOptions → SP.ScraperOptions → [String] → IO ()
-scraperMain _ so [u] = SP.scrape so u
-scraperMain _ _ _ = logLine "You need to provide a university which to scrape"
-#endif
+-- scraperMain ∷ CommonOptions → SP.ScraperOptions → [String] → IO ()
+-- scraperMain _ so [u] = SP.scrape so u
+-- scraperMain _ _ _ = logLine "You need to provide a university which to scrape"
