@@ -1,4 +1,4 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE ConstraintKinds, ExplicitForAll, ScopedTypeVariables #-}
 {-|
 Module      : $Header$
 Description : Calculate schedules
@@ -23,52 +23,50 @@ module SchedulePlanner.Calculator.Solver
   ) where
 
 import           Control.Arrow         ((&&&))
-import           Control.Monad.Unicode
-import           Data.List             as List (sortBy, uncons)
-import qualified Data.Map              as Map (Map, empty, foldl, fromListWith,
-                                               insert, keys, lookup, map, null)
 import           Data.Maybe            (fromMaybe)
 import qualified Data.Ord              as Ord (comparing)
-import           Prelude.Unicode
+import ClassyPrelude
 import           SchedulePlanner.Types
+import Data.Map (fromListWith)
+
 
 
 {-|
   type Alias for readability
   maps lessons to their respective subject
 -}
-newtype MappedLessons s  = MappedLessons { unMapLessons ∷ Map.Map s [Lesson s] }
+type IsMappedLessons s map  = (IsMap map, ContainerKey map ~ s, MapValue map ~ [(Lesson s, Weight)])
 
 
 {-|
   type Alias for readability
   represents a schedule
 -}
-newtype MappedSchedule s = MappedSchedule { unMapSchedule ∷ Map.Map Cell (Lesson s) }
+type IsMappedSchedule s map = (IsMap map, ContainerKey map ~ Cell, MapValue map ~ (Lesson s, Weight))
 
 
 -- | Convenience function extracing the (day, timeslot) 'Tuple' from a 'Lesson'
-time ∷ Lesson a → Cell
-time = Cell ∘ (day &&& timeslot)
+time :: Lesson a -> Cell
+time = Cell . (day &&& timeslot)
 
 
 -- | Convenience function to obtain the total weight of a particular Schedule
-totalWeight ∷ MappedSchedule a → Int
-totalWeight = Map.foldl (+) 0 ∘ Map.map weight ∘ unMapSchedule
+totalWeight :: IsMappedSchedule a map => map -> Integer
+totalWeight = sum . map (snd . snd) . mapToList
 
 
 {-|
   Map a List of 'Lesson's to their respective subjects
 -}
-mapToSubject ∷ Ord ɷ ⇒ [Lesson ɷ] → MappedLessons ɷ
-mapToSubject = MappedLessons ∘ Map.fromListWith (⧺) ∘ map (subject &&& (:[]))
+mapToSubject :: Ord w => [(Lesson w, Weight)] -> Map w [(Lesson w, Weight)]
+mapToSubject = fromListWith (++) . map ((subject . fst) &&& return)
 
 
 {-|
   Same as 'calcFromMap' but operates on a List of 'Lesson's
 -}
-calcFromList ∷ Ord ɷ ⇒ [Lesson ɷ] → Maybe [MappedSchedule ɷ]
-calcFromList = calcFromMap ∘ mapToSubject
+calcFromList :: (IsMappedSchedule w map, Ord w) => [(Lesson w, Weight)] -> Maybe [map]
+calcFromList = calcFromMap . mapToSubject
 
 
 {-|
@@ -77,57 +75,55 @@ calcFromList = calcFromMap ∘ mapToSubject
   of lightest schedules by branching the evaluation at avery point
   where there is a timeslot collision
 -}
-calcFromMap ∷ Ord ɷ
-            ⇒ MappedLessons ɷ
-            → Maybe [MappedSchedule ɷ]
-calcFromMap (MappedLessons mappedLessons)
-  | Map.null mappedLessons  = Nothing
-  | otherwise               =
-    reduceLists subjX (MappedLessons sortedLessons) (MappedSchedule Map.empty) minList
+calcFromMap :: (IsMappedSchedule w smap, IsMappedLessons w lmap, Ord w, Monoid smap)
+            => lmap
+            -> [smap]
+calcFromMap (null -> True) = []
+calcFromMap mappedLessons = reduceLists subjX sortedLessons mempty minList
   where
-    sortedLessons     = Map.map (List.sortBy (Ord.comparing weight)) mappedLessons
-    (subjX : minList) = Map.keys sortedLessons
+    sortedLessons     = map (sortBy (Ord.comparing snd)) mappedLessons
+    (subjX : minList) = keys sortedLessons
 
 
 {-|
   One of the essential calculation steps, reducing the subject lists and
   recursing the calculation
 -}
-reduceLists ∷ Ord ɷ
-            ⇒ ɷ
-            → MappedLessons ɷ
-            → MappedSchedule ɷ
-            → [ɷ]
-            → Maybe [MappedSchedule ɷ]
-reduceLists s (MappedLessons mappedLessons) schedules subjects =
-  Map.lookup s mappedLessons ≫= uncons ≫=
-    \(c, cs)  → calc' c (MappedLessons $ Map.insert s cs mappedLessons) schedules subjects
+reduceLists :: (IsMappedSchedule w smap, IsMappedLessons w lmap, Ord w)
+            => w
+            -> lmap
+            -> smap
+            -> [w]
+            -> [smap]
+reduceLists s mappedLessons schedules subjects =
+  fromMaybe [] $ lookup s mappedLessons >>= uncons >>=
+    \(c, cs)  -> calc' c (insertMap s cs mappedLessons) schedules subjects
 
 
 {-|
   Helper function for 'calcFromMap'
   represents a recusively called and forking calculation step
 -}
-calc' ∷ Ord ɷ
-      ⇒ Lesson ɷ
-      → MappedLessons ɷ
-      → MappedSchedule ɷ
-      → [ɷ]
-      → Maybe [MappedSchedule ɷ]
-calc' x lists (MappedSchedule hourMap) minList =
+calc' :: (IsMappedSchedule w smap, IsMappedLessons w lmap, Ord w)
+      => Lesson w
+      -> lmap
+      -> smap
+      -> [ɷ]
+      -> [smap]
+calc' x lists hourMap minList =
   maybe
     maybeEnd
     splitCalc
-    (Map.lookup (time x) hourMap)
+    (lookup (time x) hourMap)
 
   where
     maybeEnd = maybe
-                (return [newMap])
-                (\(c, cs) → reduceLists c lists newMap cs)
+                [newMap]
+                (\(c, cs) -> reduceLists c lists newMap cs)
                 (uncons minList)
 
     sideCalc element aMap = fromMaybe [] (reduceLists (subject element) lists aMap minList)
 
-    splitCalc old         = return $ sideCalc x (MappedSchedule hourMap) ⧺ sideCalc old newMap
+    splitCalc old         = sideCalc x hourMap ++ sideCalc old newMap
 
-    newMap                = MappedSchedule $ Map.insert (time x) x hourMap
+    newMap                = insertMap (time x) x hourMap

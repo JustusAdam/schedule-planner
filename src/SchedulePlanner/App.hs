@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnicodeSyntax     #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-|
 Module      : $Header$
 Description : Connector from IO to logic
@@ -28,9 +27,6 @@ import qualified Data.Map                   as Map (elems, keys)
 import           Data.Maybe                 (isNothing)
 import           Data.Monoid.Unicode
 import           Data.String                (fromString)
-import           Data.Text                  as T (Text, pack, toLower)
-import qualified Data.Text.Encoding         (decodeUtf8)
-import           Data.Text.IO               as TIO (putStrLn, writeFile)
 import           Prelude.Unicode
 import           SchedulePlanner.Calculator (MappedLessons (..),
                                              MappedSchedule (..), calcFromMap,
@@ -38,16 +34,17 @@ import           SchedulePlanner.Calculator (MappedLessons (..),
 import           SchedulePlanner.Serialize  (DataFile (DataFile),
                                              formatSchedule, scheduleToJson,
                                              shortSubject)
+import ClassyPrelude
 
 -- |Print a string if debug is enabled
-printDebug :: Show a ⇒ Bool → a → Writer Text ()
-printDebug debugMode = when debugMode ∘ tell ∘ pack ∘ show
+printDebug :: (MonadWriter Text m, Show a) => Bool -> a -> m Text ()
+printDebug debugMode = when debugMode . tell . pack . show
 
 
 {-|
   Calculation on internal data structures.
 -}
-calculate :: DataFile → Maybe [MappedSchedule Text]
+calculate :: DataFile -> Maybe [MappedSchedule Text]
 calculate (DataFile rules lessons) =
   calcFromMap $ mapToSubject $ weigh rules lessons
 
@@ -55,41 +52,41 @@ calculate (DataFile rules lessons) =
 {-|
   Calculation wrapped into server I/O compatible data structures.
 -}
-serverCalculation :: ByteString → ByteString
+serverCalculation :: ByteString -> ByteString
 serverCalculation =
   either
-    (fromString ∘ ("Error:" ⧺) ∘ show)
+    (fromString . ("Error:" ++) . show)
     (maybe
       "\"No schedule could be calculated\""
-      (encode ∘ map scheduleToJson)
-    ∘ calculate)
-  ∘ eitherDecode
+      (encode . map scheduleToJson)
+    . calculate)
+  . eitherDecode
 
 
 {-|
   Evaluates the transformed json, compiles (useful) error messages, runs the algorithm
   and returns a writer of any output created.
 -}
-reportAndExecute :: Text → Bool → DataFile → Writer Text ()
+reportAndExecute :: MonadWriter Text m => Text -> Bool -> DataFile -> m Text ()
 reportAndExecute outputFormat debugMode (DataFile rules lessons)
   | isNothing calculated = tell "Calculation failed, no valid schedule possible"
-  | outputFormat' ≡ "print" = do
+  | outputFormat' == "print" = do
     tell "\n"
-    _       ← mapM (printDebug debugMode) rules
+    _       <- mapM (printDebug debugMode) rules
     tell "\n"
 
     tell "\n"
-    _       ← mapM (printDebug debugMode) weighted
+    _       <- mapM (printDebug debugMode) weighted
     tell "\n"
 
     tell "Legend:"
-    _       ← mapM (tell ∘ pack ∘ show ∘ (shortSubject &&& id) ) (Map.keys mlRaw)
+    _       <- mapM (tell . pack . show . (shortSubject &&& id) ) (Map.keys mlRaw)
 
 
     tell "\n"
     void $ maybe (error "Unexpected missing result") pc calculated
-  | outputFormat' ≡ "json" =
-    void $ maybe (error "unexpected missing result") (tell ∘ Data.Text.Encoding.decodeUtf8 ∘ toStrict ∘ encode ∘ concatMap (Map.elems ∘ unMapSchedule)) calculated
+  | outputFormat' == "json" =
+    void $ maybe (error "unexpected missing result") (tell . decodeUtf8 . toStrict . encode . concatMap (Map.elems . unMapSchedule)) calculated
 
 
   | otherwise = tell "invalid output format"
@@ -98,16 +95,16 @@ reportAndExecute outputFormat debugMode (DataFile rules lessons)
     outputFormat' = toLower outputFormat
     weighted      = weigh rules lessons
     mappedLessons@(MappedLessons mlRaw) = mapToSubject weighted
-    pc            = mapM (tell ∘ ("\n\n" ⊕) ∘ formatSchedule)
+    pc            = mapM (tell . ("\n\n" ⊕) . formatSchedule)
     calculated    = calcFromMap mappedLessons
 
 
 {-|
   perform the calculation and print the result to the command line
 -}
-reportAndPrint :: Text → Bool → Maybe String → ByteString → IO()
+reportAndPrint :: Text -> Bool -> Maybe String -> ByteString -> IO()
 reportAndPrint outputFormat debugMode outFile =
-  maybe TIO.putStrLn TIO.writeFile outFile ∘ either
-    (pack ∘ ("Stopped execution due to a severe problem with the input data:" ⧺) ∘ show)
-    (snd ∘ runWriter ∘ reportAndExecute outputFormat debugMode)
-     ∘ eitherDecode
+  maybe putStrLn writeFile outFile . either
+    (pack . ("Stopped execution due to a severe problem with the input data:" ++) . show)
+    (snd . runWriter . reportAndExecute outputFormat debugMode)
+     . eitherDecode
